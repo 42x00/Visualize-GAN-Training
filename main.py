@@ -32,7 +32,7 @@ x2_vec = np.reshape(x2, (cnt_interval ** 2, 1))
 X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
 
 
-def plot_surface_nn(x, y, value, fake_point, real_point):
+def plot_surface_nn(x, y, value, real_point, fake_point):
     plt.cla()
 
     # draw surface
