@@ -1,10 +1,13 @@
+# Rely on "tkinter"
+# sudo apt install tkinter
+
 from matplotlib import pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
-import tkinter
 
 fig = plt.figure()
 ax = Axes3D(fig)
+
 X = np.arange(-4, 4, 0.25)
 Y = np.arange(-4, 4, 0.25)
 X, Y = np.meshgrid(X, Y)

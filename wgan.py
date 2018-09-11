@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
 
 mb_size = 10
 X_dim = 2
@@ -14,7 +13,6 @@ def xavier_init(size):
     return tf.random_normal(shape=size, stddev=xavier_stddev)
 
 
-# -- D -- #
 X = tf.placeholder(tf.float32, shape=[None, X_dim])
 
 D_W1 = tf.Variable(xavier_init([X_dim, h_dim]))
@@ -25,7 +23,6 @@ D_b2 = tf.Variable(tf.zeros(shape=[1]))
 
 theta_D = [D_W1, D_W2, D_b1, D_b2]
 
-# -- G -- #
 z = tf.placeholder(tf.float32, shape=[None, z_dim])
 
 G_W1 = tf.Variable(xavier_init([z_dim, h_dim]))
