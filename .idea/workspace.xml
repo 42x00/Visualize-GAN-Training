@@ -3,11 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="dc1ec150-1260-4813-bb15-11707b4957c3" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dynamic draw.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/3Dplot_tutorial.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/visual template of nn.py" beforeDir="false" afterPath="$PROJECT_DIR$/visual template of nn.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/wgan.py" beforeDir="false" afterPath="$PROJECT_DIR$/wgan.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -42,24 +37,25 @@
         <counts>
           <entry key="Python Console" value="16" />
           <entry key="dummy" value="55" />
-          <entry key="py" value="3492" />
+          <entry key="py" value="3506" />
+          <entry key="txt" value="64" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="PLAIN_TEXT" value="55" />
-          <entry key="Python" value="3508" />
+          <entry key="PLAIN_TEXT" value="119" />
+          <entry key="Python" value="3522" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <caret line="105" column="24" selection-start-line="105" selection-start-column="24" selection-end-line="105" selection-end-column="24" />
+            <state relative-caret-position="528">
+              <caret line="24" lean-forward="true" selection-start-line="24" selection-end-line="24" />
               <folding>
                 <element signature="e#1#24#0" expanded="true" />
               </folding>
@@ -91,11 +87,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/wgan.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="401">
-              <caret line="84" lean-forward="true" selection-start-line="84" selection-end-line="84" />
+            <state relative-caret-position="286">
+              <caret line="13" lean-forward="true" selection-start-line="13" selection-end-line="13" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -125,10 +121,10 @@
       <list>
         <option value="$PROJECT_DIR$/plot.py" />
         <option value="$PROJECT_DIR$/dynamic draw.py" />
-        <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/visual template of nn.py" />
         <option value="$PROJECT_DIR$/plot3D.py" />
         <option value="$PROJECT_DIR$/wgan.py" />
+        <option value="$PROJECT_DIR$/main.py" />
       </list>
     </option>
   </component>
@@ -274,7 +270,7 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="PyScientificConfigurable" />
+    <property name="settings.editor.selected.configurable" value="application.passwordSafe" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -288,7 +284,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.visual template of nn">
+  <component name="RunManager" selected="Python.main">
     <configuration name="dynamic draw" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="Visualize-of-GAN-Training" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -396,8 +392,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.visual template of nn" />
         <item itemvalue="Python.main" />
+        <item itemvalue="Python.visual template of nn" />
         <item itemvalue="Python.dynamic draw" />
         <item itemvalue="Python.wgan" />
         <item itemvalue="Python.plot" />
@@ -415,6 +411,21 @@
       <option name="presentableId" value="Default" />
       <updated>1534926740265</updated>
     </task>
+    <task id="LOCAL-00001" summary="Formalize the template code">
+      <created>1536674420183</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1536674420183</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Fix little bugs">
+      <created>1536674821468</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1536674821468</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TodoView">
@@ -430,7 +441,7 @@
     <frame x="0" y="-2" width="1920" height="1082" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18783352" />
+      <window_info content_ui="combo" id="Project" order="0" weight="0.18783352" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -445,7 +456,7 @@
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Terminal" order="11" weight="0.32948583" />
-      <window_info anchor="bottom" x="1920" y="46" width="1600" height="900" id="Python Console" order="12" visible="true" weight="0.36306402" />
+      <window_info anchor="bottom" x="1920" y="46" width="1600" height="900" id="Python Console" order="12" weight="0.27806926" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -459,6 +470,11 @@
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Formalize the template code" />
+    <MESSAGE value="Fix little bugs" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix little bugs" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_umd.py">
@@ -485,16 +501,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret line="105" column="24" selection-start-line="105" selection-start-column="24" selection-end-line="105" selection-end-column="24" />
-          <folding>
-            <element signature="e#1#24#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/3Dplot_tutorial.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="176">
@@ -507,10 +513,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/wgan.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="401">
-          <caret line="84" lean-forward="true" selection-start-line="84" selection-end-line="84" />
+        <state relative-caret-position="286">
+          <caret line="13" lean-forward="true" selection-start-line="13" selection-end-line="13" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="528">
+          <caret line="24" lean-forward="true" selection-start-line="24" selection-end-line="24" />
+          <folding>
+            <element signature="e#1#24#0" expanded="true" />
           </folding>
         </state>
       </provider>
