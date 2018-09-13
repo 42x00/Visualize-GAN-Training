@@ -11,8 +11,12 @@ h_dim = 40
 
 # -- WGAN parameter -- #
 cnt_point = 10
-iter_G = 1
-iter_D = 100
+noise_min = -1.
+noise_max = 1.
+iter_G = 50
+iter_D = 10
+D_learning_rate = 1e-1
+G_learning_rate = 1e-1
 
 # -- plot parameter -- #
 fig3D = plt.figure(1)
@@ -20,10 +24,10 @@ fig2D = plt.figure(2)
 ax = Axes3D(fig3D)
 cnt_interval = 80
 # plot arrange
-x_axis_min = -1
-x_axis_max = 1
-y_axis_min = -1
-y_axis_max = 1
+x_axis_min = -1.5
+x_axis_max = 1.5
+y_axis_min = -1.5
+y_axis_max = 1.5
 
 # -- prepare plot axis -- #
 x1 = np.linspace(x_axis_min, x_axis_max, cnt_interval)
@@ -36,14 +40,14 @@ X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
 
 
 # calc "value = f(X_visual)" then function can draw
-def plot_surface_nn(x, y, value, real_point, fake_point, grad_visual):
+def plot_surface_nn(x, y, value, real_point, fake_point, grad_visual, iter):
     z = np.reshape(value, (cnt_interval, cnt_interval))
 
     # -- 3D plot -- #
     with plt.style.context("seaborn-whitegrid"):
         pl.figure(1)
         plt.cla()
-        plt.title('3D View')
+        plt.title('3D View of ' + str(iter) + ' Iter')
 
         # draw surface
         ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='coolwarm', alpha=0.7)
@@ -64,11 +68,11 @@ def plot_surface_nn(x, y, value, real_point, fake_point, grad_visual):
     # -- 2D plot -- #
     pl.figure(2)
     plt.cla()
-    plt.title('2D View')
+    plt.title('2D View ' + str(iter) + ' Iter')
 
     # draw projection
     # plt.contourf(x, y, z, 400, cmap='coolwarm', alpha=0.7)
-    plt.imshow(z, extent=[-1, 1, -1, 1], cmap='coolwarm', origin='lower')
+    plt.imshow(z, extent=[x_axis_min, x_axis_max, y_axis_min, y_axis_max], cmap='coolwarm', origin='lower')
 
     # draw points
     plt.scatter(real_point[:, 0], real_point[:, 1], color='#D0252D', marker='+')
@@ -121,7 +125,7 @@ theta_G = [G_W1, G_W2, G_b1, G_b2]
 
 # -- set WGAN -- #
 def sample_z(m, n):
-    return np.random.uniform(-1., 1., size=[m, n])
+    return np.random.uniform(noise_min, noise_max, size=[m, n])
 
 
 def generator(z):
@@ -148,9 +152,9 @@ Grad_fake = tf.gradients(D_value, X_toView)
 D_loss = tf.reduce_mean(D_real) - tf.reduce_mean(D_fake)
 G_loss = -tf.reduce_mean(D_fake)
 
-D_solver = (tf.train.RMSPropOptimizer(learning_rate=1e-2)
+D_solver = (tf.train.RMSPropOptimizer(learning_rate=D_learning_rate)
             .minimize(-D_loss, var_list=theta_D))
-G_solver = (tf.train.RMSPropOptimizer(learning_rate=1e-2)
+G_solver = (tf.train.RMSPropOptimizer(learning_rate=G_learning_rate)
             .minimize(G_loss, var_list=theta_G))
 
 sess = tf.Session()
@@ -159,10 +163,11 @@ sess.run(tf.global_variables_initializer())
 # -- prepare data -- #
 X_real = sample_z(10, 2)
 z_fix = sample_z(10, 2)
-X_fake = sess.run(G_sample, feed_dict={z: z_fix})
 
 for iter_g in range(iter_G):
     # train D
+    # z_fix = sample_z(cnt_point, X_dim)
+    X_fake = sess.run(G_sample, feed_dict={z: z_fix})
     for iter_d in range(iter_D):
         _, D_loss_curr = sess.run(
             [D_solver, D_loss],
@@ -173,12 +178,13 @@ for iter_g in range(iter_G):
         # calc surface and gradient data to plot
         Value_visual = sess.run(D_value, feed_dict={X_toView: X_visual})
         Grad_visual = sess.run(Grad_fake, feed_dict={X_toView: X_fake})
-        plot_surface_nn(x1, x2, Value_visual, X_real, X_fake, Grad_visual[0])
+        plot_surface_nn(x1, x2, Value_visual, X_real, X_fake, Grad_visual[0], iter_d)
 
     # update G
     _, G_loss_curr = sess.run(
         [G_solver, G_loss],
-        feed_dict={z: sample_z(cnt_point, z_dim)}
+        feed_dict={z: z_fix}
+        # feed_dict={z: sample_z(cnt_point, z_dim)}
     )
 
     # print loss
