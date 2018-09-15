@@ -4,8 +4,7 @@
     <bookmark url="file://$PROJECT_DIR$/main.py" line="86" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="dc1ec150-1260-4813-bb15-11707b4957c3" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="dc1ec150-1260-4813-bb15-11707b4957c3" name="Default Changelist" comment="fix gitignore">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -48,12 +47,12 @@
           <entry key="gitignore" value="3" />
           <entry key="main" value="106" />
           <entry key="py" value="7345" />
-          <entry key="txt" value="330" />
+          <entry key="txt" value="333" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="PLAIN_TEXT" value="391" />
+          <entry key="PLAIN_TEXT" value="394" />
           <entry key="Python" value="7516" />
         </counts>
       </usages-collector>
@@ -154,7 +153,7 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds" extendedState="7">
     <option name="y" value="27" />
     <option name="width" value="1717" />
     <option name="height" value="950" />
@@ -489,7 +488,14 @@
       <option name="project" value="LOCAL" />
       <updated>1536981727235</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="fix gitignore">
+      <created>1536982049187</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1536982049187</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TodoView">
@@ -542,7 +548,8 @@
     <MESSAGE value="Add more text for visual and fix some bugs" />
     <MESSAGE value="Finish the basic view of WGAN-GP" />
     <MESSAGE value="Add gitignore" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add gitignore" />
+    <MESSAGE value="fix gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix gitignore" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_umd.py">
