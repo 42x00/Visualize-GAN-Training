@@ -22,7 +22,7 @@ G_learning_rate = 1e-3
 lam = 0.1
 
 # -- plot parameter -- #
-visual_delay = 0.01
+visual_delay = 0.1
 fig3D = plt.figure(1)
 fig2D = plt.figure(2)
 figloss = plt.figure(3)
@@ -96,37 +96,30 @@ def plot_surface_nn(x, y, value, real_point, real_value, fake_point, fake_value,
 def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_loss):
     # add data to history
     D_fake_loss_rec.append(D_fake_loss)
-    D_real_loss_rec.append(-D_real_loss)
-    GAN_loss_rec.append(-(D_fake_loss - D_real_loss))
+    D_real_loss_rec.append(D_real_loss)
+    GAN_loss_rec.append(D_fake_loss - D_real_loss)
     grad_loss_rec.append(grad_loss)
 
     with plt.style.context("seaborn-whitegrid"):
         # -- draw stacked plot -- #
         pl.figure(3)
         plt.cla()
-        plt.title('Loss Stack View')
+        plt.title('Current Loss View')
 
         # draw loss change proportion
-        draw_labels = ['GAN', 'Grad']
         draw_pal = ['gold', 'dimgray']
         plt.stackplot(range(max(0, iter - iter_D), iter), GAN_loss_rec[max(0, iter - iter_D): iter],
-                      grad_loss_rec[max(0, iter - iter_D): iter], labels=draw_labels,
-                      colors=draw_pal, alpha=0.7)
-        plt.legend(loc=2)
+                      grad_loss_rec[max(0, iter - iter_D): iter], colors=draw_pal, alpha=0.7)
 
         # -- draw fake and real expect -- #
-        pl.figure(4)
-        plt.cla()
-        plt.title('Value Expect View')
+        # draw value expect
+        plt.plot(range(max(0, iter - iter_D), iter), D_fake_loss_rec[max(0, iter - iter_D): iter],
+                 color='#1057AA', alpha=0.7)
 
-        # darw value expect
-        plt.fill_between(range(max(0, iter - iter_D), iter), 0, D_fake_loss_rec[max(0, iter - iter_D): iter],
-                         color='#1057AA', alpha=0.7)
+        plt.plot(range(max(0, iter - iter_D), iter), D_real_loss_rec[max(0, iter - iter_D): iter],
+                 color='#D0252D', alpha=0.7)
 
-        plt.fill_between(range(max(0, iter - iter_D), iter), 0, D_real_loss_rec[max(0, iter - iter_D): iter],
-                         color='#D0252D', alpha=0.7)
-
-        plt.legend(labels=['Fake', 'Real'], loc=2)
+        plt.legend(labels=['Fake', 'Real', 'GAN', 'Grad'], loc=2)
 
         plt.pause(visual_delay)
 
@@ -272,6 +265,10 @@ for iter_g in range(iter_G):
                         iter_d)
         plot_loss_change(iter_g * iter_D + iter_d + 1, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr)
 
+        # print loss
+        print('Iter: {}; D loss: {:.4}'
+              .format(iter_d, D_loss_curr))
+
     # update G
     _, G_loss_curr = sess.run(
         [G_solver, G_loss],
@@ -280,5 +277,5 @@ for iter_g in range(iter_G):
     )
 
     # print loss
-    print('Iter: {}; D loss: {:.4}; G_loss: {:.4}'
-          .format(iter_g, D_loss_curr, G_loss_curr))
+    print('Iter: {}; G_loss: {:.4}'
+          .format(iter_g, G_loss_curr))
