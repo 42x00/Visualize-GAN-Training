@@ -5,8 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dc1ec150-1260-4813-bb15-11707b4957c3" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -31,11 +31,13 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
+          <entry key="gitignore" value="1" />
           <entry key="py" value="8" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
+          <entry key="PLAIN_TEXT" value="1" />
           <entry key="Python" value="8" />
         </counts>
       </usages-collector>
@@ -43,14 +45,15 @@
         <counts>
           <entry key="Python Console" value="65" />
           <entry key="dummy" value="58" />
+          <entry key="gitignore" value="3" />
           <entry key="main" value="106" />
           <entry key="py" value="7345" />
-          <entry key="txt" value="311" />
+          <entry key="txt" value="330" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="PLAIN_TEXT" value="369" />
+          <entry key="PLAIN_TEXT" value="391" />
           <entry key="Python" value="7516" />
         </counts>
       </usages-collector>
@@ -58,15 +61,24 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="353">
-              <caret line="232" column="36" lean-forward="true" selection-start-line="232" selection-start-column="36" selection-end-line="232" selection-end-column="36" />
+            <state relative-caret-position="375">
+              <caret line="233" column="36" lean-forward="true" selection-start-line="233" selection-start-column="36" selection-end-line="233" selection-end-column="36" />
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
                 <marker date="1536933957737" expanded="true" signature="3100:4121" ph="..." />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/.gitignore">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret column="6" lean-forward="true" selection-start-column="6" selection-end-column="6" />
             </state>
           </provider>
         </entry>
@@ -132,6 +144,7 @@
         <option value="$PROJECT_DIR$/plot3D.py" />
         <option value="$PROJECT_DIR$/wgan.py" />
         <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -469,7 +482,14 @@
       <option name="project" value="LOCAL" />
       <updated>1536926031288</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Add gitignore">
+      <created>1536981727235</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1536981727235</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TodoView">
@@ -485,7 +505,7 @@
     <frame x="0" y="-2" width="1920" height="1082" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" weight="0.18783352" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.18783352" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -500,7 +520,7 @@
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Terminal" order="11" weight="0.32948583" />
-      <window_info active="true" anchor="bottom" x="1920" y="46" width="1600" height="900" id="Python Console" order="12" visible="true" weight="0.3210913" />
+      <window_info anchor="bottom" x="1920" y="46" width="1600" height="900" id="Python Console" order="12" visible="true" weight="0.3210913" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -521,7 +541,8 @@
     <MESSAGE value="Successfully add the gradient quiver, then visual the environment in both 2D and 3D." />
     <MESSAGE value="Add more text for visual and fix some bugs" />
     <MESSAGE value="Finish the basic view of WGAN-GP" />
-    <option name="LAST_COMMIT_MESSAGE" value="Finish the basic view of WGAN-GP" />
+    <MESSAGE value="Add gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add gitignore" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_umd.py">
@@ -534,8 +555,8 @@
     <entry file="file://$PROJECT_DIR$/dynamic draw.py" />
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="353">
-          <caret line="232" column="36" lean-forward="true" selection-start-line="232" selection-start-column="36" selection-end-line="232" selection-end-column="36" />
+        <state relative-caret-position="375">
+          <caret line="233" column="36" lean-forward="true" selection-start-line="233" selection-start-column="36" selection-end-line="233" selection-end-column="36" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
             <marker date="1536933957737" expanded="true" signature="3100:4121" ph="..." />
@@ -567,6 +588,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1936">
           <caret line="93" selection-start-line="93" selection-end-line="96" selection-end-column="48" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="6" lean-forward="true" selection-start-column="6" selection-end-column="6" />
         </state>
       </provider>
     </entry>
