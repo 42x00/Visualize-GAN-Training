@@ -8,18 +8,18 @@ import pylab as pl
 X_dim = 2
 z_dim = 2
 h_dim = 512
-D_layers = 7
-G_layers = 5
+D_layers = 10
+G_layers = 6
 
 # -- WGAN parameter -- #
-cnt_point = 10
+cnt_point = 8
 noise_min = -1.
 noise_max = 1.
 iter_G = 100
-iter_D = 120
-D_learning_rate = 1e-5
-G_learning_rate = 1e-3
-lam = 0.1
+iter_D = 10
+D_learning_rate = 1e-3
+G_learning_rate = 1e-4
+lam = 0.5
 
 # -- plot parameter -- #
 visual_delay = 0.1
@@ -124,6 +124,12 @@ def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_loss):
         plt.pause(visual_delay)
 
 
+def print_layer_mean_value():
+    D_layer_toview = sess.run(D_layer_mean_rec, feed_dict={X_toView: X_real})
+    for i in range(D_layers):
+        print(i, D_layer_toview[i])
+
+
 # initialize nn weights
 def xavier_init(size):
     in_dim = size[0]
@@ -194,7 +200,8 @@ def generator(z):
 
     G_last = tf.matmul(G_last, G_W[G_layers - 1]) + G_b[G_layers - 1]
 
-    G_out = tf.nn.sigmoid(G_last)
+    G_out = G_last
+    # G_out = tf.nn.sigmoid(G_last)
     return G_out
 
 
@@ -206,14 +213,32 @@ def discriminator(x):
 
     D_last = tf.matmul(D_last, D_W[D_layers - 1]) + D_b[D_layers - 1]
 
-    D_out = tf.log(D_last)
+    D_out = D_last
+    # D_out = tf.sigmoid(D_last)
+
     return D_out
+
+
+def discriminator_rec(x):
+    D_layer_value_rec = []
+    D_last = x
+
+    for i in range(D_layers - 1):
+        D_last = tf.nn.relu(tf.matmul(D_last, D_W[i]) + D_b[i])
+        D_layer_value_rec.append(tf.reduce_mean(D_last))
+
+    D_last = tf.matmul(D_last, D_W[D_layers - 1]) + D_b[D_layers - 1]
+    D_layer_value_rec.append(tf.reduce_mean(D_last))
+
+    return D_layer_value_rec
 
 
 G_sample = generator(z)
 D_value = discriminator(X_toView)
 D_real = discriminator(X)
 D_fake = discriminator(G_sample)
+
+D_layer_mean_rec = discriminator_rec(X_toView)
 
 Grad_fake = tf.gradients(D_value, X_toView)
 
@@ -255,6 +280,8 @@ for iter_g in range(iter_G):
             feed_dict={X: X_real, z: z_fix}
             # feed_dict={X: X_real, z: sample_z(cnt_point, z_dim)}
         )
+
+        # print_layer_mean_value()
 
         # calc surface and gradient data to plot
         Value_visual = sess.run(D_value, feed_dict={X_toView: X_visual})
