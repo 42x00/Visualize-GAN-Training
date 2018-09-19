@@ -4,54 +4,49 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pylab as pl
 
-# -- control -- #
-to_debug = False
-to_plot = True
-to_test = False
-
 # -- nn parameter -- #
 X_dim = 2
 z_dim = 2
 h_dim = 512
-D_layers = 7
-G_layers = 5
+D_layers = 10
+G_layers = 6
 
 # -- WGAN parameter -- #
-cnt_point = 1
+cnt_point = 8
 noise_min = -1.
 noise_max = 1.
 iter_G = 100
 iter_D = 10
-D_learning_rate = 1e-2
+D_learning_rate = 1e-3
 G_learning_rate = 1e-4
-grad_lam = 1e3
+lam = 0.5
 
 # -- plot parameter -- #
 visual_delay = 0.1
 fig3D = plt.figure(1)
 fig2D = plt.figure(2)
-figLoss = plt.figure(3)
+figloss = plt.figure(3)
 ax = Axes3D(fig3D)
-cnt_draw_along_axis = 80
+cnt_interval = 80
 # plot arrange
 x_axis_min = -1.5
 x_axis_max = 1.5
 y_axis_min = -1.5
 y_axis_max = 1.5
 
-# -- prepare plot axis basis -- #
-x1 = np.linspace(x_axis_min, x_axis_max, cnt_draw_along_axis)
-x2 = np.linspace(y_axis_min, y_axis_max, cnt_draw_along_axis)
+# -- prepare plot axis -- #
+x1 = np.linspace(x_axis_min, x_axis_max, cnt_interval)
+x2 = np.linspace(y_axis_min, y_axis_max, cnt_interval)
 x1, x2 = np.meshgrid(x1, x2)
-x1_vec = np.reshape(x1, (cnt_draw_along_axis ** 2, 1))
-x2_vec = np.reshape(x2, (cnt_draw_along_axis ** 2, 1))
+x1_vec = np.reshape(x1, (cnt_interval ** 2, 1))
+x2_vec = np.reshape(x2, (cnt_interval ** 2, 1))
 # to calc points where X_visual.shape = [None, X_dim]
 X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
 
 
 # calc "value = f(X_visual)" then function can draw
 def plot_surface_nn(x, y, value, real_point, real_value, fake_point, fake_value, grad_visual, iter):
-    z = np.reshape(value, (cnt_draw_along_axis, cnt_draw_along_axis))
+    z = np.reshape(value, (cnt_interval, cnt_interval))
 
     # -- 3D plot -- #
     with plt.style.context("seaborn-whitegrid"):
@@ -129,7 +124,6 @@ def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_loss):
         plt.pause(visual_delay)
 
 
-# for debug : print every layer's mean output
 def print_layer_mean_value():
     D_layer_toview = sess.run(D_layer_mean_rec, feed_dict={X_toView: X_real})
     for i in range(D_layers):
@@ -239,34 +233,25 @@ def discriminator_rec(x):
     return D_layer_value_rec
 
 
-# WGAN's G & D
 G_sample = generator(z)
 D_value = discriminator(X_toView)
 D_real = discriminator(X)
 D_fake = discriminator(G_sample)
 
-# for debug
-if (to_debug):
-    D_layer_mean_rec = discriminator_rec(X_toView)
+D_layer_mean_rec = discriminator_rec(X_toView)
 
-# for grad visualize
-Grad_tovisual = tf.gradients(D_value, X_toView)[0]
+Grad_fake = tf.gradients(D_value, X_toView)
 
-# WGAN optimizer
-Grad_fake = tf.gradients(D_fake, G_sample)[0]
-Grad_pen = tf.Variable(tf.zeros(shape=[1]))
-for iter_fake in range(cnt_point):
-    for iter_real in range(cnt_point):
-        X_distance = X[iter_real] - G_sample[iter_fake]
-        Grad_pen = Grad_pen + (D_real[iter_real] - D_fake[iter_fake]) * tf.reduce_sum(
-            tf.multiply(Grad_fake[iter_fake], X_distance)) / tf.square(tf.norm(X_distance)) / tf.norm(
-            Grad_fake[iter_fake])
-Grad_pen = Grad_pen / cnt_point ** 2
+eps = tf.random_uniform([cnt_point, 1], minval=0., maxval=1.)
+X_inter = eps * X + (1. - eps) * G_sample
+grad = tf.gradients(discriminator(X_inter), [X_inter])[0]
+grad_norm = tf.sqrt(tf.reduce_sum((grad) ** 2, axis=1))
+grad_pen = lam * tf.reduce_mean((grad_norm - 1) ** 2)
 
 D_fake_mean = tf.reduce_mean(D_fake)
 D_real_mean = tf.reduce_mean(D_real)
 
-D_loss = D_fake_mean - D_real_mean + Grad_pen
+D_loss = D_fake_mean - D_real_mean + grad_pen
 G_loss = -tf.reduce_mean(D_fake)
 
 D_solver = (tf.train.AdamOptimizer(learning_rate=D_learning_rate)
@@ -280,56 +265,44 @@ sess.run(tf.global_variables_initializer())
 # -- prepare data -- #
 X_real = sample_z(cnt_point, X_dim)
 z_fix = sample_z(cnt_point, X_dim)
-
-# to visualize
 D_real_loss_rec = []
 D_fake_loss_rec = []
 GAN_loss_rec = []
 grad_loss_rec = []
 
-# for test
-if (to_test):
-    iter_G = 1
-    iter_D = 1
-
-# -- training -- #
 for iter_g in range(iter_G):
     # train D
+    # z_fix = sample_z(cnt_point, X_dim)
     X_fake = sess.run(G_sample, feed_dict={z: z_fix})
     for iter_d in range(iter_D):
         _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr = sess.run(
-            [D_solver, D_loss, D_fake_mean, D_real_mean, Grad_pen[0]],
+            [D_solver, D_loss, D_fake_mean, D_real_mean, grad_pen],
             feed_dict={X: X_real, z: z_fix}
+            # feed_dict={X: X_real, z: sample_z(cnt_point, z_dim)}
         )
 
-        # for debug
-        if (to_debug):
-            print_layer_mean_value()
+        # print_layer_mean_value()
 
-        # for plot
-        if (to_plot):
-            # calc surface and gradient data to plot
-            # surface value
-            Value_visual = sess.run(D_value, feed_dict={X_toView: X_visual})
-            # point value
-            Real_value_visual = sess.run(D_value, feed_dict={X_toView: X_real})
-            Fake_value_visual = sess.run(D_value, feed_dict={X_toView: X_fake})
-            # grad value
-            Grad_visual = sess.run(Grad_tovisual, feed_dict={X_toView: X_fake})
-
-            # draw the plots
-            plot_surface_nn(x1, x2, Value_visual, X_real, Real_value_visual, X_fake, Fake_value_visual, Grad_visual,
-                            iter_d)
-            plot_loss_change(iter_g * iter_D + iter_d + 1, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr)
+        # calc surface and gradient data to plot
+        Value_visual = sess.run(D_value, feed_dict={X_toView: X_visual})
+        Real_value_visual = sess.run(D_value, feed_dict={X_toView: X_real})
+        Fake_value_visual = sess.run(D_value, feed_dict={X_toView: X_fake})
+        Grad_visual = sess.run(Grad_fake, feed_dict={X_toView: X_fake})
+        plot_surface_nn(x1, x2, Value_visual, X_real, Real_value_visual, X_fake, Fake_value_visual, Grad_visual[0],
+                        iter_d)
+        plot_loss_change(iter_g * iter_D + iter_d + 1, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr)
 
         # print loss
-        print('Iter:' + str(iter_d) + '; D_loss:' + str(D_loss_curr))
+        print('Iter: {}; D loss: {:.4}'
+              .format(iter_d, D_loss_curr))
 
     # update G
     _, G_loss_curr = sess.run(
         [G_solver, G_loss],
         feed_dict={z: z_fix}
+        # feed_dict={z: sample_z(cnt_point, z_dim)}
     )
 
     # print loss
-    print('Iter:' + str(iter_g) + '; G_loss:' + str(G_loss_curr))
+    print('Iter: {}; G_loss: {:.4}'
+          .format(iter_g, G_loss_curr))
