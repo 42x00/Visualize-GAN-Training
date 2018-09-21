@@ -17,15 +17,14 @@ D_layers = 7
 G_layers = 5
 
 # -- WGAN parameter -- #
-cnt_point = 3
+cnt_point = 6
 noise_min = -1.
 noise_max = 1.
 iter_G = 100
 iter_D = 10
 D_learning_rate = 1e-4
 G_learning_rate = 1e-4
-lam_grad_direction = 0.1
-lam_grad_norm = 0.1
+grad_lam = 100
 
 # -- plot parameter -- #
 visual_delay = 0.1
@@ -196,7 +195,7 @@ for i in range(G_layers):
 
 # -- set WGAN -- #
 def sample_z(m, n):
-    return (np.float32)(np.random.uniform(noise_min, noise_max, size=[m, n]))
+    return np.random.uniform(noise_min, noise_max, size=[m, n])
 
 
 def generator(z):
@@ -220,8 +219,8 @@ def discriminator(x):
 
     D_last = tf.matmul(D_last, D_W[D_layers - 1]) + D_b[D_layers - 1]
 
-    D_out = D_last
-    # D_out = tf.sigmoid(D_last)
+    # D_out = D_last
+    D_out = tf.sigmoid(D_last)
 
     return D_out
 
@@ -252,45 +251,23 @@ if (to_debug):
 
 # for grad visualize
 Grad_tovisual = tf.gradients(D_value, X_toView)[0]
-Grad_fake = tf.gradients(D_value, X_toView)
 
-# -- WGAN optimizer --
-# X_real[j] - X_fake[i] & norm(*)
-X_fake_mat = tf.reshape(G_sample, (cnt_point, 1, 2))
-X_real_mat = tf.reshape(X, (1, cnt_point, 2))
-X_distance = X_real_mat - X_fake_mat
-X_distance_norm = tf.norm(X_distance, axis=-1)
+# WGAN optimizer
+Grad_fake = tf.gradients(D_fake, G_sample)[0]
+Grad_pen = tf.Variable(tf.zeros(shape=[1]))
+for iter_fake in range(cnt_point):
+    for iter_real in range(cnt_point):
+        X_distance = X[iter_real] - G_sample[iter_fake]
+        Grad_pen = Grad_pen + (D_real[iter_real] - D_fake[iter_fake]) * tf.reduce_sum(
+            tf.multiply(Grad_fake[iter_fake], X_distance)) / tf.square(tf.norm(X_distance)) / tf.norm(
+            Grad_fake[iter_fake])
+Grad_pen = Grad_pen / cnt_point
 
-# D_real[j] - D_fake[i]
-D_diff = tf.transpose(D_real) - D_fake
+D_fake_mean = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_fake, labels=tf.zeros_like(D_fake)))
+D_real_mean = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_real, labels=tf.ones_like(D_real)))
 
-# inner loop penalty
-grad_pen_inner_scale = D_diff / tf.square(X_distance_norm)
-grad_pen_inner_scale_mat = tf.reshape(grad_pen_inner_scale, (cnt_point, cnt_point, 1))
-grad_pen_inner_mat = grad_pen_inner_scale_mat * X_distance
-
-# grad(X_fake[i]) & norm(*)
-grad = tf.gradients(D_fake, G_sample)[0]
-grad_norm = tf.norm(grad, axis=1)
-grad_norm_mat = tf.reshape(grad_norm, (cnt_point, 1))
-
-# external loop penalty
-grad_external = grad / grad_norm_mat
-grad_external_mat = tf.reshape(grad_external, (cnt_point, 1, 2))
-
-# two kind of grad penalty
-grad_direction_pen = lam_grad_direction * tf.reduce_sum(grad_external_mat * grad_pen_inner_mat)
-grad_norm_pen = lam_grad_norm * tf.reduce_mean(grad_norm ** 2)
-
-# final grad penalty
-grad_pen = grad_direction_pen + grad_norm_pen
-
-# wgan basic loss
-D_fake_mean = tf.reduce_mean(D_fake)
-D_real_mean = tf.reduce_mean(D_real)
-
-D_loss = D_fake_mean - D_real_mean + grad_pen
-G_loss = -tf.reduce_mean(D_fake)
+D_loss = D_real_mean + D_fake_mean
+G_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=D_fake, labels=tf.ones_like(D_fake)))
 
 D_solver = (tf.train.AdamOptimizer(learning_rate=D_learning_rate)
             .minimize(D_loss, var_list=theta_D))
@@ -320,25 +297,17 @@ for iter_g in range(iter_G):
     # train D
     X_fake = sess.run(G_sample, feed_dict={z: z_fix})
     for iter_d in range(iter_D):
-        if to_test:
-            print('test')
-            x1, x2 = sess.run([grad_external_mat, grad_pen_inner_mat], feed_dict={X: X_real, z: z_fix})
-            print(x1)
-            print('============')
-            print(x2)
-
-        if not to_test:
-            _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr = sess.run(
-                [D_solver, D_loss, D_fake_mean, D_real_mean, grad_pen],
-                feed_dict={X: X_real, z: z_fix}
-            )
+        _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr = sess.run(
+            [D_solver, D_loss, D_fake_mean, D_real_mean, Grad_pen[0]],
+            feed_dict={X: X_real, z: z_fix}
+        )
 
         # for debug
-        if to_debug:
+        if (to_debug):
             print_layer_mean_value()
 
         # for plot
-        if to_plot:
+        if (to_plot):
             # calc surface and gradient data to plot
             # surface value
             Value_visual = sess.run(D_value, feed_dict={X_toView: X_visual})
@@ -353,15 +322,14 @@ for iter_g in range(iter_G):
                             iter_d)
             plot_loss_change(iter_g * iter_D + iter_d + 1, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr)
 
-            # print loss
-            print('Iter:' + str(iter_d) + '; D_loss:' + str(D_loss_curr))
-
-    if not to_test:
-        # update G
-        _, G_loss_curr = sess.run(
-            [G_solver, G_loss],
-            feed_dict={z: z_fix}
-        )
-
         # print loss
-        print('Iter:' + str(iter_g) + '; G_loss:' + str(G_loss_curr))
+        print('Iter:' + str(iter_d) + '; D_loss:' + str(D_loss_curr))
+
+    # update G
+    _, G_loss_curr = sess.run(
+        [G_solver, G_loss],
+        feed_dict={z: z_fix}
+    )
+
+    # print loss
+    print('Iter:' + str(iter_g) + '; G_loss:' + str(G_loss_curr))
