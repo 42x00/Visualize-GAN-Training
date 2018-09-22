@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from numpy.linalg import cholesky
 import pylab as pl
 
 # -- control -- #
@@ -48,6 +49,15 @@ x1_vec = np.reshape(x1, (cnt_draw_along_axis ** 2, 1))
 x2_vec = np.reshape(x2, (cnt_draw_along_axis ** 2, 1))
 # to calc points where X_visual.shape = [None, X_dim]
 X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
+
+
+# generator gauss
+def gauss_2d(mu_1, mu_2, cnt):
+    mu = np.array([[mu_1, mu_2]])
+    Sigma = np.array([[0.2, 0], [0, 0.2]])
+    R = cholesky(Sigma)
+    s = np.dot(np.random.randn(cnt, 2), R) + mu
+    return s
 
 
 # calc "value = f(X_visual)" then function can draw
@@ -327,8 +337,7 @@ for iter_g in range(iter_G):
     X_fake = sess.run(G_sample, feed_dict={z: z_fix})
     for iter_d in range(iter_D):
         if to_test:
-            print('test')
-            # X_fake
+            X_fake = gauss_2d(0, 1, cnt_point)
             _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
                 [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
                 feed_dict={X: X_real, X_fake_fix: X_fake}
