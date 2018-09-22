@@ -17,14 +17,14 @@ D_layers = 7
 G_layers = 5
 
 # -- WGAN parameter -- #
-cnt_point = 3
+cnt_point = 8
 noise_min = -1.
 noise_max = 1.
 iter_G = 100
 iter_D = 10
 D_learning_rate = 1e-4
 G_learning_rate = 1e-4
-lam_grad_direction = 0.1
+lam_grad_direction = 1
 lam_grad_norm = 0.1
 
 # -- plot parameter -- #
@@ -99,12 +99,13 @@ def plot_surface_nn(x, y, value, real_point, real_value, fake_point, fake_value,
     plt.pause(visual_delay)
 
 
-def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_loss):
+def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_norm_loss, grad_direction_loss):
     # add data to history
     D_fake_loss_rec.append(D_fake_loss)
     D_real_loss_rec.append(D_real_loss)
     GAN_loss_rec.append(D_fake_loss - D_real_loss)
-    grad_loss_rec.append(grad_loss)
+    grad_norm_loss_rec.append(grad_norm_loss)
+    grad_direction_loss_rec.append(grad_direction_loss)
 
     with plt.style.context("seaborn-whitegrid"):
         # -- draw stacked plot -- #
@@ -113,9 +114,10 @@ def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_loss):
         plt.title('Current Loss View')
 
         # draw loss change proportion
-        draw_pal = ['gold', 'dimgray']
+        draw_pal = ['gold', 'dimgray', 'saddlebrown']
         plt.stackplot(range(max(0, iter - iter_D), iter), GAN_loss_rec[max(0, iter - iter_D): iter],
-                      grad_loss_rec[max(0, iter - iter_D): iter], colors=draw_pal, alpha=0.7)
+                      grad_direction_loss_rec[max(0, iter - iter_D): iter],
+                      grad_norm_loss_rec[max(0, iter - iter_D): iter], colors=draw_pal, alpha=0.7)
 
         # -- draw fake and real expect -- #
         # draw value expect
@@ -125,7 +127,7 @@ def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_loss):
         plt.plot(range(max(0, iter - iter_D), iter), D_real_loss_rec[max(0, iter - iter_D): iter],
                  color='#D0252D', alpha=0.7)
 
-        plt.legend(labels=['Fake', 'Real', 'GAN', 'Grad'], loc=2)
+        plt.legend(labels=['Fake', 'Real', 'GAN', 'Grad_Direct', 'Grad_Norm'], loc=2)
 
         plt.pause(visual_delay)
 
@@ -247,8 +249,7 @@ D_real = discriminator(X)
 D_fake = discriminator(G_sample)
 
 # for debug
-if (to_debug):
-    D_layer_mean_rec = discriminator_rec(X_toView)
+D_layer_mean_rec = discriminator_rec(X_toView)
 
 # for grad visualize
 Grad_tovisual = tf.gradients(D_value, X_toView)[0]
@@ -279,11 +280,11 @@ grad_external = grad / grad_norm_mat
 grad_external_mat = tf.reshape(grad_external, (cnt_point, 1, 2))
 
 # two kind of grad penalty
-grad_direction_pen = lam_grad_direction * tf.reduce_sum(grad_external_mat * grad_pen_inner_mat)
+grad_direction_pen = lam_grad_direction * tf.reduce_sum(grad_external_mat * grad_pen_inner_mat) / cnt_point ** 2
 grad_norm_pen = lam_grad_norm * tf.reduce_mean(grad_norm ** 2)
 
 # final grad penalty
-grad_pen = grad_direction_pen + grad_norm_pen
+grad_pen = - grad_direction_pen + grad_norm_pen
 
 # wgan basic loss
 D_fake_mean = tf.reduce_mean(D_fake)
@@ -308,7 +309,8 @@ z_fix = sample_z(cnt_point, X_dim)
 D_real_loss_rec = []
 D_fake_loss_rec = []
 GAN_loss_rec = []
-grad_loss_rec = []
+grad_norm_loss_rec = []
+grad_direction_loss_rec = []
 
 # for test
 if (to_test):
@@ -328,8 +330,8 @@ for iter_g in range(iter_G):
             print(x2)
 
         if not to_test:
-            _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr = sess.run(
-                [D_solver, D_loss, D_fake_mean, D_real_mean, grad_pen],
+            _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
+                [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
                 feed_dict={X: X_real, z: z_fix}
             )
 
@@ -351,7 +353,8 @@ for iter_g in range(iter_G):
             # draw the plots
             plot_surface_nn(x1, x2, Value_visual, X_real, Real_value_visual, X_fake, Fake_value_visual, Grad_visual,
                             iter_d)
-            plot_loss_change(iter_g * iter_D + iter_d + 1, D_fake_mean_curr, D_real_mean_curr, grad_pen_curr)
+            plot_loss_change(iter_g * iter_D + iter_d + 1, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr,
+                             grad_direction_pen_curr)
 
             # print loss
             print('Iter:' + str(iter_d) + '; D_loss:' + str(D_loss_curr))
