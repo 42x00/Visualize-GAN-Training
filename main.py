@@ -147,8 +147,9 @@ def xavier_init(size):
 
 
 # -- set D -- #
-X_toView = tf.placeholder(tf.float32, shape=[None, X_dim])
 X = tf.placeholder(tf.float32, shape=[None, X_dim])
+X_toView = tf.placeholder(tf.float32, shape=[None, X_dim])
+X_fake_fix = tf.placeholder(tf.float32, shape=[None, X_dim])
 
 D_W = []
 D_b = []
@@ -243,7 +244,10 @@ def discriminator_rec(x):
 
 
 # WGAN's G & D
-G_sample = generator(z)
+if to_test:
+    G_sample = X_fake_fix
+else:
+    G_sample = generator(z)
 D_value = discriminator(X_toView)
 D_real = discriminator(X)
 D_fake = discriminator(G_sample)
@@ -324,10 +328,11 @@ for iter_g in range(iter_G):
     for iter_d in range(iter_D):
         if to_test:
             print('test')
-            x1, x2 = sess.run([grad_external_mat, grad_pen_inner_mat], feed_dict={X: X_real, z: z_fix})
-            print(x1)
-            print('============')
-            print(x2)
+            # X_fake
+            _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
+                [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
+                feed_dict={X: X_real, X_fake_fix: X_fake}
+            )
 
         if not to_test:
             _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(

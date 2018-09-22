@@ -1,3 +1,4 @@
 .idea/
 venv
 *.xml
+test.py
