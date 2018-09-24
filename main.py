@@ -8,24 +8,24 @@ import pylab as pl
 # -- control -- #
 to_debug = False
 to_plot = True
-to_test = False
+to_test = True
 
 # -- nn parameter -- #
 X_dim = 2
 z_dim = 2
 h_dim = 512
-D_layers = 7
-G_layers = 5
+D_layers = 8
+G_layers = 6
 
 # -- WGAN parameter -- #
-cnt_point = 8
+cnt_point = 10
 noise_min = -1.
 noise_max = 1.
 iter_G = 100
 iter_D = 10
 D_learning_rate = 1e-4
 G_learning_rate = 1e-4
-lam_grad_direction = 1
+lam_grad_direction = 0.1
 lam_grad_norm = 0.1
 
 # -- plot parameter -- #
@@ -54,7 +54,7 @@ X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
 # generator gauss
 def gauss_2d(mu_1, mu_2, cnt):
     mu = np.array([[mu_1, mu_2]])
-    Sigma = np.array([[0.2, 0], [0, 0.2]])
+    Sigma = np.array([[0.01, 0], [0, 0.01]])
     R = cholesky(Sigma)
     s = np.dot(np.random.randn(cnt, 2), R) + mu
     return s
@@ -309,8 +309,8 @@ G_loss = -tf.reduce_mean(D_fake)
 
 D_solver = (tf.train.AdamOptimizer(learning_rate=D_learning_rate)
             .minimize(D_loss, var_list=theta_D))
-G_solver = (tf.train.AdamOptimizer(learning_rate=G_learning_rate)
-            .minimize(G_loss, var_list=theta_G))
+# G_solver = (tf.train.AdamOptimizer(learning_rate=G_learning_rate)
+#             .minimize(G_loss, var_list=theta_G))
 
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
@@ -329,15 +329,20 @@ grad_direction_loss_rec = []
 # for test
 if (to_test):
     iter_G = 1
-    iter_D = 1
+    iter_D = 100
 
 # -- training -- #
 for iter_g in range(iter_G):
     # train D
-    X_fake = sess.run(G_sample, feed_dict={z: z_fix})
+    if not to_test:
+        X_fake = sess.run(G_sample, feed_dict={z: z_fix})
+    else:
+        X_fake = gauss_2d(0.7, 0, cnt_point - 1)
+        X_fake = np.append(X_fake, [[-0.8, 0]], axis=0)
+        X_real = gauss_2d(0.7, 0, cnt_point - 1)
+        X_real = np.append(X_real, [[-0.5, 0]], axis=0)
     for iter_d in range(iter_D):
         if to_test:
-            X_fake = gauss_2d(0, 1, cnt_point)
             _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
                 [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
                 feed_dict={X: X_real, X_fake_fix: X_fake}
