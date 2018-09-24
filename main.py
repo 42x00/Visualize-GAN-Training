@@ -24,8 +24,8 @@ noise_max = 1.
 iter_G = 100
 iter_D = 10
 D_learning_rate = 1e-3
-G_learning_rate = 1e-4
-lam_grad_direction = 0.1
+G_learning_rate = 5e-5
+lam_grad_direction = 1
 lam_grad_norm = 0.05
 
 # -- plot parameter -- #
@@ -124,10 +124,11 @@ def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_norm_loss, grad_direct
         plt.title('Current Loss View')
 
         # draw loss change proportion
-        draw_pal = ['gold', 'dimgray', 'saddlebrown']
+        draw_pal = ['gold', 'saddlebrown', 'dimgray']
         plt.stackplot(range(max(0, iter - iter_D), iter), GAN_loss_rec[max(0, iter - iter_D): iter],
+                      grad_norm_loss_rec[max(0, iter - iter_D): iter],
                       grad_direction_loss_rec[max(0, iter - iter_D): iter],
-                      grad_norm_loss_rec[max(0, iter - iter_D): iter], colors=draw_pal, alpha=0.7)
+                      colors=draw_pal, alpha=0.7)
 
         # -- draw fake and real expect -- #
         # draw value expect
@@ -137,7 +138,7 @@ def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_norm_loss, grad_direct
         plt.plot(range(max(0, iter - iter_D), iter), D_real_loss_rec[max(0, iter - iter_D): iter],
                  color='#D0252D', alpha=0.7)
 
-        plt.legend(labels=['Fake', 'Real', 'GAN', 'Grad_Direct', 'Grad_Norm'], loc=2)
+        plt.legend(labels=['Fake', 'Real', 'GAN', 'Grad_Norm', 'Grad_Direct'], loc=2)
 
         plt.pause(visual_delay)
 
@@ -270,20 +271,23 @@ Grad_tovisual = tf.gradients(D_value, X_toView)[0]
 Grad_fake = tf.gradients(D_value, X_toView)
 
 # -- WGAN optimizer --
-# X_real[j] - X_fake[i] & norm(*)
 X_fake_mat = tf.reshape(G_sample, (cnt_point, 1, 2))
+X_fake_transpose_mat = tf.reshape(G_sample, (1, cnt_point, 2))
 X_real_mat = tf.reshape(X, (1, cnt_point, 2))
-X_distance = X_real_mat - X_fake_mat
-X_distance_norm = tf.norm(X_distance, axis=-1)
+
+# grad_direction_penalty : real -> fake
+# X_real[j] - X_fake[i] & norm(*)
+X_distance_rf = X_real_mat - X_fake_mat
+X_distance_norm_rf = tf.norm(X_distance_rf, axis=-1)
 
 # D_real[j] - D_fake[i]
-D_diff = tf.transpose(D_real) - D_fake
-D_diff = tf.maximum(D_diff, 0)
+D_diff_rf = tf.transpose(D_real) - D_fake
+# D_diff_rf = tf.maximum(D_diff_rf, 0)
 
-# inner loop penalty
-grad_pen_inner_scale = D_diff / tf.square(X_distance_norm)
-grad_pen_inner_scale_mat = tf.reshape(grad_pen_inner_scale, (cnt_point, cnt_point, 1))
-grad_pen_inner_mat = grad_pen_inner_scale_mat * X_distance
+# inner loop penalty : real -> fake
+grad_pen_inner_scale_rf = D_diff_rf / tf.square(X_distance_norm_rf)
+grad_pen_inner_scale_mat_rf = tf.reshape(grad_pen_inner_scale_rf, (cnt_point, cnt_point, 1))
+grad_pen_inner_mat_rf = grad_pen_inner_scale_mat_rf * X_distance_rf
 
 # grad(X_real[i]) & norm(*)
 grad_real = tf.gradients(D_real, X)[0]
@@ -294,13 +298,28 @@ grad_fake = tf.gradients(D_fake, G_sample)[0]
 grad_fake_norm = tf.norm(grad_fake, axis=1)
 grad_fake_norm_mat = tf.reshape(grad_fake_norm, (cnt_point, 1))
 
+# grad_direction_penalty : fake -> fake
+# X_fake[j] - X_fake[i] & norm(*)
+X_distance_ff = X_fake_transpose_mat - X_fake_mat
+X_distance_norm_ff = tf.norm(X_distance_ff, axis=-1) + tf.eye(cnt_point)
+
+# D_fake[j] - D_fake[i]
+D_diff_ff = tf.transpose(D_fake) - D_fake
+
+# inner loop penalty : fake -> fake
+grad_pen_inner_scale_ff = D_diff_ff / tf.square(X_distance_norm_ff)
+grad_pen_inner_scale_mat_ff = tf.reshape(grad_pen_inner_scale_ff, (cnt_point, cnt_point, 1))
+grad_pen_inner_mat_ff = grad_pen_inner_scale_mat_ff * X_distance_ff
+
 # external loop penalty
 grad_external = grad_fake / grad_fake_norm_mat
 grad_external_mat = tf.reshape(grad_external, (cnt_point, 1, 2))
 
 # two kind of grad penalty
-grad_direction_pen = lam_grad_direction * tf.reduce_sum(grad_external_mat * grad_pen_inner_mat) / cnt_point ** 2
-grad_norm_pen = lam_grad_norm * (tf.reduce_mean(grad_fake_norm ** 2) + tf.reduce_mean(grad_real_norm ** 2)) / 2
+grad_direction_pen = lam_grad_direction * (tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_rf) -
+                                           tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_ff)) \
+                     / cnt_point ** 2
+grad_norm_pen = lam_grad_norm * tf.reduce_mean(grad_fake_norm ** 2) + tf.reduce_mean(grad_real_norm ** 2)
 
 # final grad penalty
 grad_pen = - grad_direction_pen + grad_norm_pen
