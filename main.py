@@ -8,14 +8,14 @@ import pylab as pl
 # -- control -- #
 to_debug = False
 to_plot = True
-to_test = True
+to_test = False
 
 # -- nn parameter -- #
 X_dim = 2
 z_dim = 2
 h_dim = 512
-D_layers = 8
-G_layers = 6
+D_layers = 10
+G_layers = 8
 
 # -- WGAN parameter -- #
 cnt_point = 10
@@ -23,10 +23,10 @@ noise_min = -1.
 noise_max = 1.
 iter_G = 100
 iter_D = 10
-D_learning_rate = 1e-4
+D_learning_rate = 1e-3
 G_learning_rate = 1e-4
 lam_grad_direction = 0.1
-lam_grad_norm = 0.1
+lam_grad_norm = 0.05
 
 # -- plot parameter -- #
 visual_delay = 0.1
@@ -278,24 +278,29 @@ X_distance_norm = tf.norm(X_distance, axis=-1)
 
 # D_real[j] - D_fake[i]
 D_diff = tf.transpose(D_real) - D_fake
+D_diff = tf.maximum(D_diff, 0)
 
 # inner loop penalty
 grad_pen_inner_scale = D_diff / tf.square(X_distance_norm)
 grad_pen_inner_scale_mat = tf.reshape(grad_pen_inner_scale, (cnt_point, cnt_point, 1))
 grad_pen_inner_mat = grad_pen_inner_scale_mat * X_distance
 
+# grad(X_real[i]) & norm(*)
+grad_real = tf.gradients(D_real, X)[0]
+grad_real_norm = tf.norm(grad_real, axis=1)
+
 # grad(X_fake[i]) & norm(*)
-grad = tf.gradients(D_fake, G_sample)[0]
-grad_norm = tf.norm(grad, axis=1)
-grad_norm_mat = tf.reshape(grad_norm, (cnt_point, 1))
+grad_fake = tf.gradients(D_fake, G_sample)[0]
+grad_fake_norm = tf.norm(grad_fake, axis=1)
+grad_fake_norm_mat = tf.reshape(grad_fake_norm, (cnt_point, 1))
 
 # external loop penalty
-grad_external = grad / grad_norm_mat
+grad_external = grad_fake / grad_fake_norm_mat
 grad_external_mat = tf.reshape(grad_external, (cnt_point, 1, 2))
 
 # two kind of grad penalty
 grad_direction_pen = lam_grad_direction * tf.reduce_sum(grad_external_mat * grad_pen_inner_mat) / cnt_point ** 2
-grad_norm_pen = lam_grad_norm * tf.reduce_mean(grad_norm ** 2)
+grad_norm_pen = lam_grad_norm * (tf.reduce_mean(grad_fake_norm ** 2) + tf.reduce_mean(grad_real_norm ** 2)) / 2
 
 # final grad penalty
 grad_pen = - grad_direction_pen + grad_norm_pen
@@ -309,8 +314,9 @@ G_loss = -tf.reduce_mean(D_fake)
 
 D_solver = (tf.train.AdamOptimizer(learning_rate=D_learning_rate)
             .minimize(D_loss, var_list=theta_D))
-# G_solver = (tf.train.AdamOptimizer(learning_rate=G_learning_rate)
-#             .minimize(G_loss, var_list=theta_G))
+if not to_test:
+    G_solver = (tf.train.AdamOptimizer(learning_rate=G_learning_rate)
+                .minimize(G_loss, var_list=theta_G))
 
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
@@ -333,7 +339,6 @@ if (to_test):
 
 # -- training -- #
 for iter_g in range(iter_G):
-    # train D
     if not to_test:
         X_fake = sess.run(G_sample, feed_dict={z: z_fix})
     else:
@@ -341,6 +346,8 @@ for iter_g in range(iter_G):
         X_fake = np.append(X_fake, [[-0.8, 0]], axis=0)
         X_real = gauss_2d(0.7, 0, cnt_point - 1)
         X_real = np.append(X_real, [[-0.5, 0]], axis=0)
+
+    # train D
     for iter_d in range(iter_D):
         if to_test:
             _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
