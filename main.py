@@ -9,24 +9,26 @@ import pylab as pl
 to_debug = False
 to_plot = True
 to_test = False
+add_fake_guide = True
+add_real_norm = True
 
 # -- nn parameter -- #
 X_dim = 2
 z_dim = 2
 h_dim = 512
 D_layers = 10
-G_layers = 8
+G_layers = 7
 
 # -- WGAN parameter -- #
-cnt_point = 10
+cnt_point = 30
 noise_min = -1.
 noise_max = 1.
 iter_G = 100
 iter_D = 10
-D_learning_rate = 1e-3
-G_learning_rate = 5e-5
+D_learning_rate = 1e-4
+G_learning_rate = 1e-4
 lam_grad_direction = 1
-lam_grad_norm = 0.05
+lam_grad_norm = 0.01
 
 # -- plot parameter -- #
 visual_delay = 0.1
@@ -36,10 +38,10 @@ figLoss = plt.figure(3)
 ax = Axes3D(fig3D)
 cnt_draw_along_axis = 80
 # plot arrange
-x_axis_min = -1.5
-x_axis_max = 1.5
-y_axis_min = -1.5
-y_axis_max = 1.5
+x_axis_min = -5
+x_axis_max = 5
+y_axis_min = -5
+y_axis_max = 5
 
 # -- prepare plot axis basis -- #
 x1 = np.linspace(x_axis_min, x_axis_max, cnt_draw_along_axis)
@@ -54,7 +56,7 @@ X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
 # generator gauss
 def gauss_2d(mu_1, mu_2, cnt):
     mu = np.array([[mu_1, mu_2]])
-    Sigma = np.array([[0.01, 0], [0, 0.01]])
+    Sigma = np.array([[0.2, 0], [0, 0.2]])
     R = cholesky(Sigma)
     s = np.dot(np.random.randn(cnt, 2), R) + mu
     return s
@@ -282,7 +284,8 @@ X_distance_norm_rf = tf.norm(X_distance_rf, axis=-1)
 
 # D_real[j] - D_fake[i]
 D_diff_rf = tf.transpose(D_real) - D_fake
-# D_diff_rf = tf.maximum(D_diff_rf, 0)
+if not add_fake_guide:
+    D_diff_rf = tf.maximum(D_diff_rf, 0)
 
 # inner loop penalty : real -> fake
 grad_pen_inner_scale_rf = D_diff_rf / tf.square(X_distance_norm_rf)
@@ -316,10 +319,18 @@ grad_external = grad_fake / grad_fake_norm_mat
 grad_external_mat = tf.reshape(grad_external, (cnt_point, 1, 2))
 
 # two kind of grad penalty
-grad_direction_pen = lam_grad_direction * (tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_rf) -
-                                           tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_ff)) \
-                     / cnt_point ** 2
-grad_norm_pen = lam_grad_norm * tf.reduce_mean(grad_fake_norm ** 2) + tf.reduce_mean(grad_real_norm ** 2)
+if add_fake_guide:
+    grad_direction_pen = lam_grad_direction * (tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_rf) -
+                                               tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_ff)) \
+                         / cnt_point ** 2
+else:
+    grad_direction_pen = lam_grad_direction * (
+        tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_rf)) / cnt_point ** 2
+
+if add_real_norm:
+    grad_norm_pen = lam_grad_norm * (tf.reduce_mean(grad_fake_norm ** 2) + tf.reduce_mean(grad_real_norm ** 2))
+else:
+    grad_norm_pen = lam_grad_norm * tf.reduce_mean(grad_fake_norm ** 2)
 
 # final grad penalty
 grad_pen = - grad_direction_pen + grad_norm_pen
@@ -341,7 +352,11 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
 # -- prepare data -- #
-X_real = sample_z(cnt_point, X_dim)
+# X_real = sample_z(cnt_point, X_dim)
+X_real_1 = gauss_2d(-3, 0, int(cnt_point / 2))
+X_real_2 = gauss_2d(3, 0, int(cnt_point / 2))
+# X_real_3 = gauss_2d(0, 2, int(cnt_point / 3))
+X_real = np.concatenate((X_real_1, X_real_2))
 z_fix = sample_z(cnt_point, X_dim)
 
 # to visualize
