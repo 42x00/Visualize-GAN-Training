@@ -8,7 +8,7 @@ import pylab as pl
 # -- control -- #
 to_debug = False
 to_plot = True
-to_test = False
+to_fix_fake_test = False
 add_fake_guide = True
 add_real_norm = True
 
@@ -21,13 +21,13 @@ G_layers = 7
 
 # -- WGAN parameter -- #
 cnt_point = 30
-noise_min = -1.
-noise_max = 1.
 iter_G = 100
 iter_D = 10
 D_learning_rate = 1e-4
 G_learning_rate = 1e-4
-lam_grad_direction = 1
+noise_z_min = -1.
+noise_z_max = 1.
+lam_grad_direction = 0.5
 lam_grad_norm = 0.01
 
 # -- plot parameter -- #
@@ -212,7 +212,7 @@ for i in range(G_layers):
 
 # -- set WGAN -- #
 def sample_z(m, n):
-    return (np.float32)(np.random.uniform(noise_min, noise_max, size=[m, n]))
+    return (np.float32)(np.random.uniform(noise_z_min, noise_z_max, size=[m, n]))
 
 
 def generator(z):
@@ -257,7 +257,7 @@ def discriminator_rec(x):
 
 
 # WGAN's G & D
-if to_test:
+if to_fix_fake_test:
     G_sample = X_fake_fix
 else:
     G_sample = generator(z)
@@ -266,11 +266,11 @@ D_real = discriminator(X)
 D_fake = discriminator(G_sample)
 
 # for debug
-D_layer_mean_rec = discriminator_rec(X_toView)
+if to_debug:
+    D_layer_mean_rec = discriminator_rec(X_toView)
 
 # for grad visualize
 Grad_tovisual = tf.gradients(D_value, X_toView)[0]
-Grad_fake = tf.gradients(D_value, X_toView)
 
 # -- WGAN optimizer --
 X_fake_mat = tf.reshape(G_sample, (cnt_point, 1, 2))
@@ -320,15 +320,18 @@ grad_external_mat = tf.reshape(grad_external, (cnt_point, 1, 2))
 
 # two kind of grad penalty
 if add_fake_guide:
-    grad_direction_pen = lam_grad_direction * (tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_rf) -
-                                               tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_ff)) \
-                         / cnt_point ** 2
+    grad_direction_pen = lam_grad_direction * tf.reduce_sum(
+        grad_external_mat *
+        (grad_pen_inner_mat_rf - grad_pen_inner_mat_ff)
+    ) / cnt_point ** 2
 else:
     grad_direction_pen = lam_grad_direction * (
         tf.reduce_sum(grad_external_mat * grad_pen_inner_mat_rf)) / cnt_point ** 2
 
 if add_real_norm:
-    grad_norm_pen = lam_grad_norm * (tf.reduce_mean(grad_fake_norm ** 2) + tf.reduce_mean(grad_real_norm ** 2))
+    grad_norm_pen = lam_grad_norm * (
+            tf.reduce_mean(grad_fake_norm ** 2) + tf.reduce_mean(grad_real_norm ** 2)
+    )
 else:
     grad_norm_pen = lam_grad_norm * tf.reduce_mean(grad_fake_norm ** 2)
 
@@ -344,7 +347,7 @@ G_loss = -tf.reduce_mean(D_fake)
 
 D_solver = (tf.train.AdamOptimizer(learning_rate=D_learning_rate)
             .minimize(D_loss, var_list=theta_D))
-if not to_test:
+if not to_fix_fake_test:
     G_solver = (tf.train.AdamOptimizer(learning_rate=G_learning_rate)
                 .minimize(G_loss, var_list=theta_G))
 
@@ -367,13 +370,13 @@ grad_norm_loss_rec = []
 grad_direction_loss_rec = []
 
 # for test
-if (to_test):
+if (to_fix_fake_test):
     iter_G = 1
     iter_D = 100
 
 # -- training -- #
 for iter_g in range(iter_G):
-    if not to_test:
+    if not to_fix_fake_test:
         X_fake = sess.run(G_sample, feed_dict={z: z_fix})
     else:
         X_fake = gauss_2d(0.7, 0, cnt_point - 1)
@@ -383,13 +386,13 @@ for iter_g in range(iter_G):
 
     # train D
     for iter_d in range(iter_D):
-        if to_test:
+        if to_fix_fake_test:
             _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
                 [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
                 feed_dict={X: X_real, X_fake_fix: X_fake}
             )
 
-        if not to_test:
+        if not to_fix_fake_test:
             _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
                 [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
                 feed_dict={X: X_real, z: z_fix}
@@ -419,7 +422,7 @@ for iter_g in range(iter_G):
             # print loss
             print('Iter:' + str(iter_d) + '; D_loss:' + str(D_loss_curr))
 
-    if not to_test:
+    if not to_fix_fake_test:
         # update G
         _, G_loss_curr = sess.run(
             [G_solver, G_loss],
