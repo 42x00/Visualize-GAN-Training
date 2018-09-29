@@ -8,7 +8,8 @@ import pylab as pl
 # -- control -- #
 to_debug = False
 to_plot = True
-to_fix_fake_test = False
+to_fix_fake_test = True
+to_imitate_G = True
 add_fake_guide = True
 add_real_norm = True
 
@@ -23,8 +24,8 @@ G_layers = 7
 cnt_point = 30
 iter_G = 100
 iter_D = 10
-D_learning_rate = 1e-4
-G_learning_rate = 1e-4
+D_learning_rate = 1e-3
+G_learning_rate = 5e-2
 noise_z_min = -1.
 noise_z_max = 1.
 lam_grad_direction = 0.5
@@ -38,12 +39,12 @@ figLoss = plt.figure(3)
 ax = Axes3D(fig3D)
 cnt_draw_along_axis = 80
 # plot arrange
-x_axis_min = -5
-x_axis_max = 5
+x_axis_min = -10
+x_axis_max = 10
 y_axis_min = -5
 y_axis_max = 5
 
-# -- prepare plot axis basis -- #
+# -- prepare plot axis basis -- #m
 x1 = np.linspace(x_axis_min, x_axis_max, cnt_draw_along_axis)
 x2 = np.linspace(y_axis_min, y_axis_max, cnt_draw_along_axis)
 x1, x2 = np.meshgrid(x1, x2)
@@ -356,8 +357,14 @@ sess.run(tf.global_variables_initializer())
 
 # -- prepare data -- #
 # X_real = sample_z(cnt_point, X_dim)
-X_real_1 = gauss_2d(-3, 0, int(cnt_point / 2))
-X_real_2 = gauss_2d(3, 0, int(cnt_point / 2))
+# case 1:  o  x       oxoxox
+# X_fake = gauss_2d(0.7, 0, cnt_point - 1)
+# X_fake = np.append(X_fake, [[-0.8, 0]], axis=0)
+# X_real = gauss_2d(0.7, 0, cnt_point - 1)
+# X_real = np.append(X_real, [[-0.5, 0]], axis=0)
+# case 2:  oooo    xxxx    oooo\
+X_real_1 = gauss_2d(-8, 2, int(cnt_point / 2))
+X_real_2 = gauss_2d(8, 2, int(cnt_point / 2))
 # X_real_3 = gauss_2d(0, 2, int(cnt_point / 3))
 X_real = np.concatenate((X_real_1, X_real_2))
 z_fix = sample_z(cnt_point, X_dim)
@@ -370,32 +377,29 @@ grad_norm_loss_rec = []
 grad_direction_loss_rec = []
 
 # for test
-if (to_fix_fake_test):
-    iter_G = 1
-    iter_D = 100
+if to_fix_fake_test:
+    if not to_imitate_G:
+        iter_G = 1
+        iter_D = 100
+    else:
+        X_fake = gauss_2d(0, 2, cnt_point)
 
 # -- training -- #
 for iter_g in range(iter_G):
-    if not to_fix_fake_test:
+    if not to_imitate_G:
         X_fake = sess.run(G_sample, feed_dict={z: z_fix})
-    else:
-        X_fake = gauss_2d(0.7, 0, cnt_point - 1)
-        X_fake = np.append(X_fake, [[-0.8, 0]], axis=0)
-        X_real = gauss_2d(0.7, 0, cnt_point - 1)
-        X_real = np.append(X_real, [[-0.5, 0]], axis=0)
 
     # train D
     for iter_d in range(iter_D):
-        if to_fix_fake_test:
-            _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
-                [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
-                feed_dict={X: X_real, X_fake_fix: X_fake}
-            )
-
         if not to_fix_fake_test:
             _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
                 [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
                 feed_dict={X: X_real, z: z_fix}
+            )
+        else:
+            _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
+                [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
+                feed_dict={X: X_real, X_fake_fix: X_fake}
             )
 
         # for debug
@@ -431,3 +435,6 @@ for iter_g in range(iter_G):
 
         # print loss
         print('Iter:' + str(iter_g) + '; G_loss:' + str(G_loss_curr))
+    else:
+        if to_imitate_G:
+            X_fake = X_fake + G_learning_rate * Grad_visual

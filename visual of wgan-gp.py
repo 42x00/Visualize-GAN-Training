@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from numpy.linalg import cholesky
 import pylab as pl
 
 # -- control -- #
@@ -17,12 +18,12 @@ D_layers = 7
 G_layers = 5
 
 # -- WGAN parameter -- #
-cnt_point = 6
+cnt_point = 30
 noise_min = -1.
 noise_max = 1.
 iter_G = 100
 iter_D = 10
-D_learning_rate = 1e-4
+D_learning_rate = 1e-3
 G_learning_rate = 1e-4
 grad_lam = 1
 
@@ -34,10 +35,10 @@ figLoss = plt.figure(3)
 ax = Axes3D(fig3D)
 cnt_draw_along_axis = 80
 # plot arrange
-x_axis_min = -1.5
-x_axis_max = 1.5
-y_axis_min = -1.5
-y_axis_max = 1.5
+x_axis_min = -10
+x_axis_max = 10
+y_axis_min = -5
+y_axis_max = 5
 
 # -- prepare plot axis basis -- #
 x1 = np.linspace(x_axis_min, x_axis_max, cnt_draw_along_axis)
@@ -47,6 +48,15 @@ x1_vec = np.reshape(x1, (cnt_draw_along_axis ** 2, 1))
 x2_vec = np.reshape(x2, (cnt_draw_along_axis ** 2, 1))
 # to calc points where X_visual.shape = [None, X_dim]
 X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
+
+
+# generator gauss
+def gauss_2d(mu_1, mu_2, cnt):
+    mu = np.array([[mu_1, mu_2]])
+    Sigma = np.array([[0.2, 0], [0, 0.2]])
+    R = cholesky(Sigma)
+    s = np.dot(np.random.randn(cnt, 2), R) + mu
+    return s
 
 
 # calc "value = f(X_visual)" then function can draw
@@ -276,7 +286,11 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
 # -- prepare data -- #
-X_real = sample_z(cnt_point, X_dim)
+# X_real = sample_z(cnt_point, X_dim)
+X_real_1 = gauss_2d(-8, 2, int(cnt_point / 2))
+X_real_2 = gauss_2d(8, 2, int(cnt_point / 2))
+# X_real_3 = gauss_2d(0, 2, int(cnt_point / 3))
+X_real = np.concatenate((X_real_1, X_real_2))
 z_fix = sample_z(cnt_point, X_dim)
 
 # to visualize
