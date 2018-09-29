@@ -21,14 +21,14 @@ D_layers = 10
 G_layers = 7
 
 # -- WGAN parameter -- #
-cnt_point = 30
+cnt_point = 10
 iter_G = 100
-iter_D = 10
-D_learning_rate = 1e-3
-G_learning_rate = 5e-2
-noise_z_min = -1.
-noise_z_max = 1.
-lam_grad_direction = 0.5
+iter_D = 20
+D_learning_rate = 1e-4
+G_learning_rate = 0.8
+noise_z_min = -10.
+noise_z_max = 10.
+lam_grad_direction = 2.0
 lam_grad_norm = 0.01
 
 # -- plot parameter -- #
@@ -41,8 +41,8 @@ cnt_draw_along_axis = 80
 # plot arrange
 x_axis_min = -10
 x_axis_max = 10
-y_axis_min = -5
-y_axis_max = 5
+y_axis_min = -10
+y_axis_max = 10
 
 # -- prepare plot axis basis -- #m
 x1 = np.linspace(x_axis_min, x_axis_max, cnt_draw_along_axis)
@@ -57,7 +57,7 @@ X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
 # generator gauss
 def gauss_2d(mu_1, mu_2, cnt):
     mu = np.array([[mu_1, mu_2]])
-    Sigma = np.array([[0.2, 0], [0, 0.2]])
+    Sigma = np.array([[0.5, 0], [0, 0.5]])
     R = cholesky(Sigma)
     s = np.dot(np.random.randn(cnt, 2), R) + mu
     return s
@@ -233,7 +233,9 @@ def discriminator(x):
     D_last = x
 
     for i in range(D_layers - 1):
-        D_last = tf.nn.relu(tf.matmul(D_last, D_W[i]) + D_b[i])
+        tmp = tf.matmul(D_last, D_W[i]) + D_b[i]
+        D_last = tf.nn.softplus(2.0 * tmp + 2.0) / 2.0 - 1.0
+        # D_last = tf.nn.selu(tmp)
 
     D_last = tf.matmul(D_last, D_W[D_layers - 1]) + D_b[D_layers - 1]
 
@@ -346,7 +348,7 @@ D_real_mean = tf.reduce_mean(D_real)
 D_loss = D_fake_mean - D_real_mean + grad_pen
 G_loss = -tf.reduce_mean(D_fake)
 
-D_solver = (tf.train.AdamOptimizer(learning_rate=D_learning_rate)
+D_solver = (tf.train.GradientDescentOptimizer(learning_rate=D_learning_rate)
             .minimize(D_loss, var_list=theta_D))
 if not to_fix_fake_test:
     G_solver = (tf.train.AdamOptimizer(learning_rate=G_learning_rate)
@@ -363,10 +365,12 @@ sess.run(tf.global_variables_initializer())
 # X_real = gauss_2d(0.7, 0, cnt_point - 1)
 # X_real = np.append(X_real, [[-0.5, 0]], axis=0)
 # case 2:  oooo    xxxx    oooo\
-X_real_1 = gauss_2d(-8, 2, int(cnt_point / 2))
-X_real_2 = gauss_2d(8, 2, int(cnt_point / 2))
+X_real = gauss_2d(8, 0, int(cnt_point))
+# X_real_2 = gauss_2d(7, 2, int(cnt_point / 2))
 # X_real_3 = gauss_2d(0, 2, int(cnt_point / 3))
-X_real = np.concatenate((X_real_1, X_real_2))
+# X_real = np.concatenate(X_real_1)
+
+# X_real = sample_z(cnt_point, X_dim)
 z_fix = sample_z(cnt_point, X_dim)
 
 # to visualize
@@ -380,14 +384,17 @@ grad_direction_loss_rec = []
 if to_fix_fake_test:
     if not to_imitate_G:
         iter_G = 1
-        iter_D = 100
+        iter_D = 1000
+        X_fake = gauss_2d(-8, 0, int(cnt_point))
     else:
-        X_fake = gauss_2d(0, 2, cnt_point)
+        # X_fake = sample_z(cnt_point, X_dim)
+        X_fake = gauss_2d(-8, 0, int(cnt_point))
+epsilon = 1e-8
 
 # -- training -- #
 for iter_g in range(iter_G):
-    if not to_imitate_G:
-        X_fake = sess.run(G_sample, feed_dict={z: z_fix})
+    # if not to_imitate_G:
+    #     X_fake = sess.run(G_sample, feed_dict={z: z_fix})
 
     # train D
     for iter_d in range(iter_D):
@@ -437,4 +444,5 @@ for iter_g in range(iter_G):
         print('Iter:' + str(iter_g) + '; G_loss:' + str(G_loss_curr))
     else:
         if to_imitate_G:
-            X_fake = X_fake + G_learning_rate * Grad_visual
+            X_fake = X_fake + G_learning_rate * Grad_visual / (
+                    np.linalg.norm(Grad_visual, axis=1, keepdims=True) + epsilon)
