@@ -1,156 +1,18 @@
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from numpy.linalg import cholesky
-import pylab as pl
+from VisualNN import VisualNN
+from VisualLoss import VisualLoss
+from parameters import *
 
-# -- control -- #
-to_debug = False
-to_plot = True
-to_fix_fake_test = True
-to_imitate_G = True
-add_fake_guide = True
-add_real_norm = True
+# -- prepare for surface plot -- #
+myVisualNN = VisualNN()
+myVisualNN.set_plot_arrange(x_axis_min, x_axis_max, y_axis_min, y_axis_max, cnt_draw_along_axis)
+X_visual = myVisualNN.generate_nn_input()
 
-# -- nn parameter -- #
-X_dim = 2
-z_dim = 2
-h_dim = 512
-D_layers = 10
-G_layers = 7
-
-# -- WGAN parameter -- #
-cnt_point = 10
-iter_G = 100
-iter_D = 20
-D_learning_rate = 1e-4
-G_learning_rate = 0.8
-noise_z_min = -10.
-noise_z_max = 10.
-lam_grad_direction = 2.0
-lam_grad_norm = 0.01
-
-# -- plot parameter -- #
-visual_delay = 0.1
-fig3D = plt.figure(1)
-fig2D = plt.figure(2)
-figLoss = plt.figure(3)
-ax = Axes3D(fig3D)
-cnt_draw_along_axis = 80
-# plot arrange
-x_axis_min = -10
-x_axis_max = 10
-y_axis_min = -10
-y_axis_max = 10
-
-# -- prepare plot axis basis -- #m
-x1 = np.linspace(x_axis_min, x_axis_max, cnt_draw_along_axis)
-x2 = np.linspace(y_axis_min, y_axis_max, cnt_draw_along_axis)
-x1, x2 = np.meshgrid(x1, x2)
-x1_vec = np.reshape(x1, (cnt_draw_along_axis ** 2, 1))
-x2_vec = np.reshape(x2, (cnt_draw_along_axis ** 2, 1))
-# to calc points where X_visual.shape = [None, X_dim]
-X_visual = np.concatenate((x1_vec, x2_vec), axis=1)
-
-
-# generator gauss
-def gauss_2d(mu_1, mu_2, cnt):
-    mu = np.array([[mu_1, mu_2]])
-    Sigma = np.array([[0.5, 0], [0, 0.5]])
-    R = cholesky(Sigma)
-    s = np.dot(np.random.randn(cnt, 2), R) + mu
-    return s
-
-
-# calc "value = f(X_visual)" then function can draw
-def plot_surface_nn(x, y, value, real_point, real_value, fake_point, fake_value, grad_visual, iter):
-    z = np.reshape(value, (cnt_draw_along_axis, cnt_draw_along_axis))
-
-    # -- 3D plot -- #
-    with plt.style.context("seaborn-whitegrid"):
-        pl.figure(1)
-        plt.cla()
-        plt.title('3D View of ' + str(iter) + ' Iter')
-
-        # draw surface
-        ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='coolwarm', alpha=0.7)
-
-        # draw points
-        ax.scatter(real_point[:, 0], real_point[:, 1], real_value, color='#D0252D')
-        ax.scatter(fake_point[:, 0], fake_point[:, 1], fake_value, color='#1057AA')
-
-        # draw gradients
-        ax.quiver(fake_point[:, 0], fake_point[:, 1], fake_value.T, grad_visual[:, 0], grad_visual[:, 1],
-                  np.zeros((cnt_point, 1)), color='black', normalize=True, lw=1, length=0.1)
-
-        # set lim
-        plt.xlim(x_axis_min * 1.5, x_axis_max * 1.5)
-        plt.ylim(y_axis_min * 1.5, y_axis_max * 1.5)
-
-    # -- 2D plot -- #
-    pl.figure(2)
-    plt.cla()
-    plt.title('2D View ' + str(iter) + ' Iter')
-
-    # draw projection
-    # plt.contourf(x, y, z, 400, cmap='coolwarm', alpha=0.7)
-    plt.imshow(z, extent=[x_axis_min, x_axis_max, y_axis_min, y_axis_max], cmap='coolwarm', origin='lower')
-
-    # draw points
-    plt.scatter(real_point[:, 0], real_point[:, 1], color='#D0252D', marker='+')
-    plt.scatter(fake_point[:, 0], fake_point[:, 1], color='#1057AA', marker='+')
-
-    # draw gradients
-    plt.quiver(fake_point[:, 0], fake_point[:, 1], grad_visual[:, 0], grad_visual[:, 1],
-               color='black', units='width')
-
-    # set lim
-    plt.xlim(x_axis_min, x_axis_max)
-    plt.ylim(y_axis_min, y_axis_max)
-
-    plt.pause(visual_delay)
-
-
-def plot_loss_change(iter, D_fake_loss, D_real_loss, grad_norm_loss, grad_direction_loss):
-    # add data to history
-    D_fake_loss_rec.append(D_fake_loss)
-    D_real_loss_rec.append(D_real_loss)
-    GAN_loss_rec.append(D_fake_loss - D_real_loss)
-    grad_norm_loss_rec.append(grad_norm_loss)
-    grad_direction_loss_rec.append(grad_direction_loss)
-
-    with plt.style.context("seaborn-whitegrid"):
-        # -- draw stacked plot -- #
-        pl.figure(3)
-        plt.cla()
-        plt.title('Current Loss View')
-
-        # draw loss change proportion
-        draw_pal = ['gold', 'saddlebrown', 'dimgray']
-        plt.stackplot(range(max(0, iter - iter_D), iter), GAN_loss_rec[max(0, iter - iter_D): iter],
-                      grad_norm_loss_rec[max(0, iter - iter_D): iter],
-                      grad_direction_loss_rec[max(0, iter - iter_D): iter],
-                      colors=draw_pal, alpha=0.7)
-
-        # -- draw fake and real expect -- #
-        # draw value expect
-        plt.plot(range(max(0, iter - iter_D), iter), D_fake_loss_rec[max(0, iter - iter_D): iter],
-                 color='#1057AA', alpha=0.7)
-
-        plt.plot(range(max(0, iter - iter_D), iter), D_real_loss_rec[max(0, iter - iter_D): iter],
-                 color='#D0252D', alpha=0.7)
-
-        plt.legend(labels=['Fake', 'Real', 'GAN', 'Grad_Norm', 'Grad_Direct'], loc=2)
-
-        plt.pause(visual_delay)
-
-
-# for debug : print every layer's mean output
-def print_layer_mean_value():
-    D_layer_toview = sess.run(D_layer_mean_rec, feed_dict={X_toView: X_real})
-    for i in range(D_layers):
-        print(i, D_layer_toview[i])
+# -- prepare for loss plot -- #
+myVisualLoss = VisualLoss()
+myVisualLoss.set_visual_times(iter_D)
 
 
 # initialize nn weights
@@ -213,7 +75,7 @@ for i in range(G_layers):
 
 # -- set WGAN -- #
 def sample_z(m, n):
-    return (np.float32)(np.random.uniform(noise_z_min, noise_z_max, size=[m, n]))
+    return np.float32(np.random.uniform(noise_z_min, noise_z_max, size=[m, n]))
 
 
 def generator(z):
@@ -245,32 +107,14 @@ def discriminator(x):
     return D_out
 
 
-def discriminator_rec(x):
-    D_layer_value_rec = []
-    D_last = x
-
-    for i in range(D_layers - 1):
-        D_last = tf.nn.relu(tf.matmul(D_last, D_W[i]) + D_b[i])
-        D_layer_value_rec.append(tf.reduce_mean(D_last))
-
-    D_last = tf.matmul(D_last, D_W[D_layers - 1]) + D_b[D_layers - 1]
-    D_layer_value_rec.append(tf.reduce_mean(D_last))
-
-    return D_layer_value_rec
-
-
 # WGAN's G & D
-if to_fix_fake_test:
+if to_disable_G:
     G_sample = X_fake_fix
 else:
     G_sample = generator(z)
 D_value = discriminator(X_toView)
 D_real = discriminator(X)
 D_fake = discriminator(G_sample)
-
-# for debug
-if to_debug:
-    D_layer_mean_rec = discriminator_rec(X_toView)
 
 # for grad visualize
 Grad_tovisual = tf.gradients(D_value, X_toView)[0]
@@ -350,64 +194,103 @@ G_loss = -tf.reduce_mean(D_fake)
 
 D_solver = (tf.train.GradientDescentOptimizer(learning_rate=D_learning_rate)
             .minimize(D_loss, var_list=theta_D))
-if not to_fix_fake_test:
+if not to_disable_G:
     G_solver = (tf.train.AdamOptimizer(learning_rate=G_learning_rate)
                 .minimize(G_loss, var_list=theta_G))
 
+
+# -- for debug -- #
+def discriminator_rec(x):
+    D_layer_value_rec = []
+    D_last = x
+
+    for i in range(D_layers - 1):
+        D_last = tf.nn.relu(tf.matmul(D_last, D_W[i]) + D_b[i])
+        D_layer_value_rec.append(tf.reduce_mean(D_last))
+
+    D_last = tf.matmul(D_last, D_W[D_layers - 1]) + D_b[D_layers - 1]
+    D_layer_value_rec.append(tf.reduce_mean(D_last))
+
+    return D_layer_value_rec
+
+
+# print every layer's mean output
+def print_layer_mean_value():
+    D_layer_toview = sess.run(D_layer_mean_rec, feed_dict={X_toView: X_real})
+    for i in range(D_layers):
+        print(i, D_layer_toview[i])
+
+
+if to_debug:
+    D_layer_mean_rec = discriminator_rec(X_toView)
+
+# -- prepare tensorflow -- #
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 
+
 # -- prepare data -- #
+# generator gauss
+def gauss_2d(mu_1, mu_2, cnt):
+    mu = np.array([[mu_1, mu_2]])
+    Sigma = np.array([[0.5, 0], [0, 0.5]])
+    R = cholesky(Sigma)
+    gauss = np.dot(np.random.randn(cnt, 2), R) + mu
+    return gauss
+
+
+#    case 0: random
 # X_real = sample_z(cnt_point, X_dim)
-# case 1:  o  x       oxoxox
+
+#    case 1: gauss
+X_real = gauss_2d(8, 0, int(cnt_point))
+
+#    case 2:  o  x       oxoxox
 # X_fake = gauss_2d(0.7, 0, cnt_point - 1)
 # X_fake = np.append(X_fake, [[-0.8, 0]], axis=0)
 # X_real = gauss_2d(0.7, 0, cnt_point - 1)
 # X_real = np.append(X_real, [[-0.5, 0]], axis=0)
-# case 2:  oooo    xxxx    oooo\
-X_real = gauss_2d(8, 0, int(cnt_point))
+
+#    case 3:  oooo    xxxx    oooo
+# X_real = gauss_2d(4, 0, int(cnt_point))
 # X_real_2 = gauss_2d(7, 2, int(cnt_point / 2))
 # X_real_3 = gauss_2d(0, 2, int(cnt_point / 3))
 # X_real = np.concatenate(X_real_1)
 
-# X_real = sample_z(cnt_point, X_dim)
+
 z_fix = sample_z(cnt_point, X_dim)
 
-# to visualize
-D_real_loss_rec = []
-D_fake_loss_rec = []
-GAN_loss_rec = []
-grad_norm_loss_rec = []
-grad_direction_loss_rec = []
-
 # for test
-if to_fix_fake_test:
-    if not to_imitate_G:
+if to_disable_G:
+    if not to_move_fake_manually:
         iter_G = 1
         iter_D = 1000
         X_fake = gauss_2d(-8, 0, int(cnt_point))
     else:
         # X_fake = sample_z(cnt_point, X_dim)
         X_fake = gauss_2d(-8, 0, int(cnt_point))
-epsilon = 1e-8
 
 # -- training -- #
 for iter_g in range(iter_G):
-    # if not to_imitate_G:
-    #     X_fake = sess.run(G_sample, feed_dict={z: z_fix})
+    if not to_move_fake_manually:
+        X_fake = sess.run(G_sample, feed_dict={z: z_fix})
 
     # train D
     for iter_d in range(iter_D):
-        if not to_fix_fake_test:
-            _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
-                [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
-                feed_dict={X: X_real, z: z_fix}
-            )
-        else:
-            _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
-                [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
-                feed_dict={X: X_real, X_fake_fix: X_fake}
-            )
+        try:
+            if not to_disable_G:
+                _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
+                    [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
+                    feed_dict={X: X_real, z: z_fix}
+                )
+            else:
+                _, D_loss_curr, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr, grad_direction_pen_curr = sess.run(
+                    [D_solver, D_loss, D_fake_mean, D_real_mean, grad_norm_pen, grad_direction_pen],
+                    feed_dict={X: X_real, X_fake_fix: X_fake}
+                )
+        except:
+            myVisualLoss.save_data()
+            myVisualNN.save_data()
 
         # for debug
         if to_debug:
@@ -425,15 +308,30 @@ for iter_g in range(iter_G):
             Grad_visual = sess.run(Grad_tovisual, feed_dict={X_toView: X_fake})
 
             # draw the plots
-            plot_surface_nn(x1, x2, Value_visual, X_real, Real_value_visual, X_fake, Fake_value_visual, Grad_visual,
-                            iter_d)
-            plot_loss_change(iter_g * iter_D + iter_d + 1, D_fake_mean_curr, D_real_mean_curr, grad_norm_pen_curr,
-                             grad_direction_pen_curr)
+            tuple_plot_NN = {'surface_value': Value_visual,
+                             'real_points_location': X_real,
+                             'real_points_value': Real_value_visual,
+                             'fake_points_location': X_fake,
+                             'fake_points_value': Fake_value_visual,
+                             'gradient_direction': Grad_visual
+                             }
+            myVisualNN.add_elements(tuple_plot_NN)
+
+            tuple_plot_Loss = {'fake_points_loss': D_fake_mean_curr,
+                               'real_points_loss': D_real_mean_curr,
+                               'gradient_norm_loss': grad_norm_pen_curr,
+                               'gradient_direction_loss': grad_direction_pen_curr
+                               }
+            myVisualLoss.add_elements(tuple_plot_Loss)
+
+            if iter_d % 5 == 0:
+                myVisualNN.plot()
+                myVisualLoss.plot()
 
             # print loss
             print('Iter:' + str(iter_d) + '; D_loss:' + str(D_loss_curr))
 
-    if not to_fix_fake_test:
+    if not to_disable_G:
         # update G
         _, G_loss_curr = sess.run(
             [G_solver, G_loss],
@@ -443,6 +341,6 @@ for iter_g in range(iter_G):
         # print loss
         print('Iter:' + str(iter_g) + '; G_loss:' + str(G_loss_curr))
     else:
-        if to_imitate_G:
+        if to_move_fake_manually:
             X_fake = X_fake + G_learning_rate * Grad_visual / (
                     np.linalg.norm(Grad_visual, axis=1, keepdims=True) + epsilon)
