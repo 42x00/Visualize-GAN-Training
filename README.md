@@ -15,8 +15,8 @@ A tool well packaged to visualize:
 | [model.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/model.py) | Implementation of **GAN** model and set calculation graph
 
 ### Demo
-<iframe height=300 src="https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/demo/3D.gif">
-<iframe height=300 src="https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/demo/2D.gif">
-<iframe height=300 src="https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/demo/Stackplot.gif">
+![conv_ops](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/demo/3D.gif)
+![conv_ops](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/demo/2D.gif)
+![conv_ops](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/demo/Stackplot.gif)
 
 
