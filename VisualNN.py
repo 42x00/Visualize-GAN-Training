@@ -4,6 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import pylab as pl
 import time
 import pickle
+import os
 
 
 class VisualNN(object):
@@ -38,6 +39,21 @@ class VisualNN(object):
         self.fig2D = plt.figure(index_2d_figure)
         self.ax = Axes3D(self.fig3D)
         self.cnt_history = 0
+
+    def __del__(self):
+        self.save_data()
+        if self.surface_value_history is not None:
+            del self.surface_value_history
+        if self.real_points_location_history is not None:
+            del self.real_points_location_history
+        if self.real_points_value_history is not None:
+            del self.real_points_value_history
+        if self.fake_points_location_history is not None:
+            del self.fake_points_location_history
+        if self.fake_points_value_history is not None:
+            del self.fake_points_value_history
+        if self.gradient_direction_history is not None:
+            del self.gradient_direction_history
 
     def set_plot_arrange(self, x_axis_min, x_axis_max, y_axis_min, y_axis_max, cnt_draw_along_axis):
         self.x_axis_min = x_axis_min
@@ -169,6 +185,8 @@ class VisualNN(object):
         plt.pause(0.1)
 
     def save_data(self):
-        name = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + '.NN'
+        if not os.path.exists('./history'):
+            os.mkdir('./history')
+        name = time.strftime("%Y-%m-%d %H:%M", time.localtime()) + '.NN'
         with open('./history/' + name, 'wb') as fw:
             pickle.dump(self, fw, -1)

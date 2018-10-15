@@ -15,8 +15,8 @@ G_layers = 7
 
 # -- WGAN parameter -- #
 cnt_point = 10
-iter_G = 100
-iter_D = 20
+iter_G = 5
+iter_D = 2
 D_learning_rate = 1e-4
 G_learning_rate = 0.8
 noise_z_min = -10.

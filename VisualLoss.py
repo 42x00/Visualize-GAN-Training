@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pylab as pl
 import time
 import pickle
+import os
 
 
 class VisualLoss(object):
@@ -23,6 +24,19 @@ class VisualLoss(object):
         self.index_loss_figure = index_loss_figure
         self.figLoss = plt.figure(index_loss_figure)
         self.cnt_history = 0
+
+    def __del__(self):
+        self.save_data()
+        if self.fake_points_loss_history is not None:
+            del self.fake_points_loss_history
+        if self.real_points_loss_history is not None:
+            del self.real_points_loss_history
+        if self.gradient_norm_loss_history is not None:
+            del self.gradient_norm_loss_history
+        if self.gradient_direction_loss_history is not None:
+            del self.gradient_direction_loss_history
+        if self.WGAN_loss_history is not None:
+            del self.WGAN_loss_history
 
     def set_visual_times(self, visual_times):
         self.visual_times = visual_times
@@ -67,28 +81,33 @@ class VisualLoss(object):
             plt.title('Current Loss View')
 
             # draw loss change proportion
-            draw_pal = ['gold', 'saddlebrown', 'dimgray']
-            plt.stackplot(range(max(0, index - self.visual_times), index),
-                          self.WGAN_loss_history[max(0, index - self.visual_times): index],
-                          self.gradient_norm_loss_history[max(0, index - self.visual_times): index],
-                          self.gradient_direction_loss_history[max(0, index - self.visual_times): index],
-                          colors=draw_pal, alpha=0.7)
+            if self.gradient_norm_loss_history is not None and self.gradient_direction_loss_history is not None:
+                draw_pal = ['gold', 'saddlebrown', 'dimgray']
+                plt.stackplot(range(max(0, index - self.visual_times), index),
+                              self.WGAN_loss_history[max(0, index - self.visual_times): index],
+                              self.gradient_norm_loss_history[max(0, index - self.visual_times): index],
+                              self.gradient_direction_loss_history[max(0, index - self.visual_times): index],
+                              colors=draw_pal, alpha=0.7)
 
             # -- draw fake and real expect -- #
             # draw value expect
-            plt.plot(range(max(0, index - self.visual_times), index),
-                     self.fake_points_loss_history[max(0, index - self.visual_times): index],
-                     color='#1057AA', alpha=0.7)
+            if self.fake_points_loss_history is not None:
+                plt.plot(range(max(0, index - self.visual_times), index),
+                         self.fake_points_loss_history[max(0, index - self.visual_times): index],
+                         color='#1057AA', alpha=0.7)
 
-            plt.plot(range(max(0, index - self.visual_times), index),
-                     self.real_points_loss_history[max(0, index - self.visual_times): index],
-                     color='#D0252D', alpha=0.7)
+            if self.real_points_loss_history is not None:
+                plt.plot(range(max(0, index - self.visual_times), index),
+                         self.real_points_loss_history[max(0, index - self.visual_times): index],
+                         color='#D0252D', alpha=0.7)
 
             plt.legend(labels=['Fake', 'Real', 'GAN', 'Grad_Norm', 'Grad_Direct'], loc=2)
 
             plt.pause(0.1)
 
     def save_data(self):
-        name = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + '.LOSS'
+        if not os.path.exists('./history'):
+            os.mkdir('./history')
+        name = time.strftime("%Y-%m-%d %H:%M", time.localtime()) + '.LOSS'
         with open('./history/' + name, 'wb') as fw:
             pickle.dump(self, fw, -1)
