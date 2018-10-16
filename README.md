@@ -12,7 +12,10 @@ A tool well packaged to visualize:
 | [VisualLoss.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/VisualLoss.py) | A **CLASS** used to plot stackplot of different part of GAN LOSS|
 | [VisualHistory.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/VisualHistory.py) | Load history records and visualize|
 | [parameters.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/parameters.py) | Parameters for running control, Neural Network, GAN and plot|
-| [model.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/model.py) | Implementation of **GAN** model and set calculation graph
+| [model.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/model.py) | Implementation of **GAN** model and set calculation graph|
+| ./history | Where history records saved|
+| ./visual template | Some scripts to visualize classical GAN model|
+
 
 ### Demo
 ![conv_ops](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/demo/3D.gif)
@@ -23,6 +26,19 @@ A tool well packaged to visualize:
 ### Usage Guide
 When training GAN model, we collect data like surface value, gradient and so on. Then we add them to the class tool, which saves data for us and allows us to plot on time or later from the history. In this way, we can easily train GAN on GPU, receiving and saving data for visualization.
 
+To modify the tool to your version, just modify [model.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/model.py) and guarantee the model allows input $X$ shaped (None, 2) and return $f(X)$, gradient or any other information included in:
+
+- surface_value
+- real_points_location
+- real_points_value
+- fake_points_location
+- fake_points_value
+- gradient_direction
+* fake_points_loss
+* real_points_loss
+* gradient_norm_loss
+* gradient_direction_loss
+
 ### Code Structure
 - [main.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/main.py)
 ```python
@@ -31,7 +47,7 @@ import ...
 # -- prepare for surface plot -- #
 myVisualNN = VisualNN()  # default: 3D - figure(1), 2D - figure(2)
 myVisualNN.set_plot_arrange(x_axis_min, x_axis_max, y_axis_min, y_axis_max, cnt_draw_along_axis)  # plot range and density
-X_visual = myVisualNN.generate_nn_input()  # generate input to feed the model getting surface value
+X_visual = myVisualNN.generate_nn_input()  # generate input to feed the model getting surface value, shape: (None, 2)
 
 # -- prepare for loss plot -- #
 myVisualLoss = VisualLoss()  # default: figure(3)

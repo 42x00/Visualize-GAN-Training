@@ -126,9 +126,9 @@ for iter_g in range(iter_G):
                                }
             myVisualLoss.add_elements(tuple_plot_Loss)
 
-            if iter_d % 5 == 0:
-                myVisualNN.plot()
-                myVisualLoss.plot()
+            # if iter_d % 5 == 0:
+            myVisualNN.plot()
+            myVisualLoss.plot()
 
             # print loss
             print('Iter:' + str(iter_d) + '; D_loss:' + str(D_loss_curr))

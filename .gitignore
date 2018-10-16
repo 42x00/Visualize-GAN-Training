@@ -3,3 +3,4 @@ venv
 *.xml
 test.py
 history
+.vscode
