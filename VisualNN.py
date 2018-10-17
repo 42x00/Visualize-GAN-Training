@@ -23,6 +23,8 @@ class VisualNN(object):
     cnt_draw_along_axis = None
     x_axis = None
     y_axis = None
+    # parameters for plot
+    visual_delay = None
     # records to plot
     cnt_history = None
     surface_value_history = None
@@ -39,6 +41,7 @@ class VisualNN(object):
         self.fig2D = plt.figure(index_2d_figure)
         self.ax = Axes3D(self.fig3D)
         self.cnt_history = 0
+        self.visual_delay = 0.1
 
     def __del__(self):
         self.save_data()
@@ -61,6 +64,9 @@ class VisualNN(object):
         self.y_axis_min = y_axis_min
         self.y_axis_max = y_axis_max
         self.cnt_draw_along_axis = cnt_draw_along_axis
+
+    def set_visual_delay(self, visual_delay):
+        self.visual_delay = visual_delay
 
     def generate_nn_input(self):
         # prepare plot axis basis #
@@ -182,7 +188,7 @@ class VisualNN(object):
         plt.xlim(self.x_axis_min, self.x_axis_max)
         plt.ylim(self.y_axis_min, self.y_axis_max)
 
-        plt.pause(0.1)
+        plt.pause(self.visual_delay)
 
     def save_data(self):
         if not os.path.exists('./history'):

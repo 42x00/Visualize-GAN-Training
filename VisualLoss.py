@@ -12,6 +12,7 @@ class VisualLoss(object):
     figLoss = None
     # parameters for plot
     visual_times = None
+    visual_delay = None
     # records to plot
     cnt_history = None
     fake_points_loss_history = None
@@ -24,6 +25,7 @@ class VisualLoss(object):
         self.index_loss_figure = index_loss_figure
         self.figLoss = plt.figure(index_loss_figure)
         self.cnt_history = 0
+        self.visual_delay = 0.1
 
     def __del__(self):
         self.save_data()
@@ -40,6 +42,9 @@ class VisualLoss(object):
 
     def set_visual_times(self, visual_times):
         self.visual_times = visual_times
+
+    def set_visual_delay(self, visual_delay):
+        self.visual_delay = visual_delay
 
     def add_elements(self, tuple_plot):
         self.cnt_history = self.cnt_history + 1
@@ -103,7 +108,7 @@ class VisualLoss(object):
 
             plt.legend(labels=['Fake', 'Real', 'GAN', 'Grad_Norm', 'Grad_Direct'], loc=2)
 
-            plt.pause(0.1)
+            plt.pause(self.visual_delay)
 
     def save_data(self):
         if not os.path.exists('./history'):

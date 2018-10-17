@@ -118,3 +118,6 @@ for i in range(myVisualNN.cnt_history):
 
 ```
 
+### Notice
+The tool relay on **Matplotlib==2.2.3** and **python3-tk**. 
+To run the tool on **GPU**, you'd better set matplotlib as **backend:agg** according to this website https://vra.github.io/2017/06/13/mpl-backend/
