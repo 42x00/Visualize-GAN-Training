@@ -34,6 +34,7 @@ To modify the tool to your version, just modify [model.py](https://github.com/Ly
 - fake_points_location
 - fake_points_value
 - gradient_direction
+- expected_direction
 * fake_points_loss
 * real_points_loss
 * gradient_norm_loss
@@ -102,19 +103,55 @@ myVisualLoss.save_data()
 
 - [VisualHistory.py](https://github.com/Lyk98/Visualize-of-GAN-Training/blob/master/VisualHistory.py)
 ```python
-import pickle
+import ...
 
-# load data from ./history
-name = '...'
+# if carefully watch
+to_careful_watch = False
+frame_start = XX
+
+# record to reload
+name = '20XX-XX-XX XX-XX'
 with open('./history/' + name + '.NN', 'rb') as fr:
     myVisualNN = pickle.load(fr)
 with open('./history/' + name + '.LOSS', 'rb') as fr:
     myVisualLoss = pickle.load(fr)
 
-# visual as you want
-for i in range(myVisualNN.cnt_history):
-    myVisualNN.plot(i)
-    myVisualLoss.plot(i)
+# reset plot location
+myVisualNN.reset_plot_location()
+myVisualLoss.reset_plot_location()
+
+# or get a local copy
+# myVisualNN = VisualNN(obj=myVisualNN)
+# myVisualLoss = VisualLoss(obj=myVisualLoss)
+
+if not to_careful_watch:
+    frame_start = 1
+    frame_end = myVisualNN.cnt_history
+    for i in range(frame_start, frame_end):
+        myVisualNN.plot(i)
+        myVisualLoss.plot(i)
+else:
+    current_frame = frame_start
+    sig = 0
+    while True:
+        myVisualNN.set_visual_delay(0.1)
+        if sig == 'n':  # next frame
+            current_frame += 1
+        if sig == 'b':  # back frame
+            current_frame -= 1
+        if sig == 'r':  # detail watch by rotate
+            myVisualNN.set_visual_delay(5)
+        if sig == 'v':  # quick rotate
+            myVisualNN.set_visual_delay(1)
+        if sig == 's':  # stop
+            break
+        myVisualLoss.plot(current_frame)
+        try:
+            myVisualNN.plot(current_frame)
+        except:
+            sig = 'b'
+            continue
+        sig = input()
 
 ```
 

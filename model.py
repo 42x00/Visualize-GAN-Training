@@ -118,7 +118,10 @@ if not add_fake_guide:
     D_diff_rf = tf.maximum(D_diff_rf, 0)
 
 # inner loop penalty : real -> fake
-grad_pen_inner_scale_rf = D_diff_rf / tf.square(X_distance_norm_rf)
+if use_slope:
+    grad_pen_inner_scale_rf = D_diff_rf / tf.square(X_distance_norm_rf)
+else:
+    grad_pen_inner_scale_rf = 1.0 / tf.pow(X_distance_norm_rf, 3)
 grad_pen_inner_scale_mat_rf = tf.reshape(grad_pen_inner_scale_rf, (cnt_point, cnt_point, 1))
 grad_pen_inner_mat_rf = grad_pen_inner_scale_mat_rf * X_distance_rf
 
@@ -140,7 +143,10 @@ X_distance_norm_ff = tf.norm(X_distance_ff, axis=-1) + tf.eye(cnt_point)
 D_diff_ff = tf.transpose(D_fake) - D_fake
 
 # inner loop penalty : fake -> fake
-grad_pen_inner_scale_ff = D_diff_ff / tf.square(X_distance_norm_ff)
+if use_slope:
+    grad_pen_inner_scale_ff = D_diff_ff / tf.square(X_distance_norm_ff)
+else:
+    grad_pen_inner_scale_ff = 1.0 / tf.pow(X_distance_norm_ff, 3)
 grad_pen_inner_scale_mat_ff = tf.reshape(grad_pen_inner_scale_ff, (cnt_point, cnt_point, 1))
 grad_pen_inner_mat_ff = grad_pen_inner_scale_mat_ff * X_distance_ff
 
@@ -150,9 +156,9 @@ grad_external_mat = tf.reshape(grad_external, (cnt_point, 1, 2))
 
 # two kind of grad penalty
 if add_fake_guide:
+    grad_expected_direction = tf.reduce_sum(grad_pen_inner_mat_rf - grad_pen_inner_mat_ff, axis=1)
     grad_direction_pen = lam_grad_direction * tf.reduce_sum(
-        grad_external_mat *
-        (grad_pen_inner_mat_rf - grad_pen_inner_mat_ff)
+        grad_external * grad_expected_direction
     ) / cnt_point ** 2
 else:
     grad_direction_pen = lam_grad_direction * (
@@ -175,7 +181,7 @@ D_real_mean = tf.reduce_mean(D_real)
 D_loss = D_fake_mean - D_real_mean + grad_pen
 G_loss = -tf.reduce_mean(D_fake)
 
-D_solver = (tf.train.GradientDescentOptimizer(learning_rate=D_learning_rate)
+D_solver = (tf.train.AdadeltaOptimizer(learning_rate=D_learning_rate)
             .minimize(D_loss, var_list=theta_D))
 if not to_disable_G:
     G_solver = (tf.train.AdamOptimizer(learning_rate=G_learning_rate)

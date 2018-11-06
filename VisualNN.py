@@ -8,7 +8,7 @@ import os
 
 
 class VisualNN(object):
-    'Support Elements: surface_value, real_points_location, real_points_value, fake_points_location, fake_points_value, gradient_direction'
+    'Support Elements: surface_value, real_points_location, real_points_value, fake_points_location, fake_points_value, gradient_direction, expected_direction'
     # figures to plot
     index_3d_figure = None
     index_2d_figure = None
@@ -33,30 +33,52 @@ class VisualNN(object):
     fake_points_location_history = None
     fake_points_value_history = None
     gradient_direction_history = None
+    expected_direction_history = None
 
-    def __init__(self, index_3d_figure=1, index_2d_figure=2):
+    def __init__(self, index_3d_figure=1, index_2d_figure=2, obj=None):
         self.index_3d_figure = index_3d_figure
         self.index_2d_figure = index_2d_figure
         self.fig3D = plt.figure(index_3d_figure)
         self.fig2D = plt.figure(index_2d_figure)
         self.ax = Axes3D(self.fig3D)
-        self.cnt_history = 0
         self.visual_delay = 0.1
+        if obj is None:
+            self.cnt_history = 0
+        else:
+            self.x_axis_min = obj.x_axis_min
+            self.x_axis_max = obj.x_axis_max
+            self.y_axis_min = obj.y_axis_min
+            self.y_axis_max = obj.y_axis_max
+            self.cnt_draw_along_axis = obj.cnt_draw_along_axis
+            self.x_axis = obj.x_axis
+            self.y_axis = obj.y_axis
+            self.visual_delay = obj.visual_delay
+            self.cnt_history = obj.cnt_history
+            self.surface_value_history = obj.surface_value_history
+            self.real_points_location_history = obj.real_points_location_history
+            self.real_points_value_history = obj.real_points_value_history
+            self.fake_points_location_history = obj.fake_points_location_history
+            self.fake_points_value_history = obj.fake_points_value_history
+            self.gradient_direction_history = obj.gradient_direction_history
+            self.expected_direction_history = obj.expected_direction_history
 
-    def __del__(self):
-        self.save_data()
-        if self.surface_value_history is not None:
-            del self.surface_value_history
-        if self.real_points_location_history is not None:
-            del self.real_points_location_history
-        if self.real_points_value_history is not None:
-            del self.real_points_value_history
-        if self.fake_points_location_history is not None:
-            del self.fake_points_location_history
-        if self.fake_points_value_history is not None:
-            del self.fake_points_value_history
-        if self.gradient_direction_history is not None:
-            del self.gradient_direction_history
+    # easy to view the result
+    # def __del__(self):
+    #     self.save_data()
+    #     if self.surface_value_history is not None:
+    #         del self.surface_value_history
+    #     if self.real_points_location_history is not None:
+    #         del self.real_points_location_history
+    #     if self.real_points_value_history is not None:
+    #         del self.real_points_value_history
+    #     if self.fake_points_location_history is not None:
+    #         del self.fake_points_location_history
+    #     if self.fake_points_value_history is not None:
+    #         del self.fake_points_value_history
+    #     if self.gradient_direction_history is not None:
+    #         del self.gradient_direction_history
+    #     if self.expected_direction_history is not None:
+    #         del self.expected_direction_history
 
     def set_plot_arrange(self, x_axis_min, x_axis_max, y_axis_min, y_axis_max, cnt_draw_along_axis):
         self.x_axis_min = x_axis_min
@@ -67,6 +89,14 @@ class VisualNN(object):
 
     def set_visual_delay(self, visual_delay):
         self.visual_delay = visual_delay
+
+    def reset_plot_location(self, index_3d_figure=1, index_2d_figure=2):
+        self.index_3d_figure = index_3d_figure
+        self.index_2d_figure = index_2d_figure
+        self.fig3D = plt.figure(index_3d_figure)
+        self.fig2D = plt.figure(index_2d_figure)
+        self.ax = Axes3D(self.fig3D)
+        self.visual_delay = 0.1
 
     def generate_nn_input(self):
         # prepare plot axis basis #
@@ -113,6 +143,10 @@ class VisualNN(object):
                     self.gradient_direction_history = []
                 self.gradient_direction_history.append(tuple_plot.get(tuple_key))
                 continue
+            if tuple_key == 'expected_direction':
+                if self.expected_direction_history is None:
+                    self.expected_direction_history = []
+                self.expected_direction_history.append(tuple_plot.get(tuple_key))
             assert 'To know elements to plot, please refer to VisualNN.__doc__'
 
     def plot(self, index=-1):
@@ -124,16 +158,24 @@ class VisualNN(object):
             value = self.surface_value_history[index]
             surface_value = np.reshape(value, (self.cnt_draw_along_axis, self.cnt_draw_along_axis))
 
-        if self.real_points_value_history is not None:
+        if self.real_points_location_history is not None:
             real_point = self.real_points_location_history[index]
+
+        if self.real_points_value_history is not None:
             real_value = self.real_points_value_history[index]
 
-        if self.fake_points_value_history is not None:
+        if self.fake_points_location_history is not None:
             fake_point = self.fake_points_location_history[index]
+            cnt_point = len(fake_point)
+
+        if self.fake_points_value_history is not None:
             fake_value = self.fake_points_value_history[index]
 
         if self.gradient_direction_history is not None:
             grad_visual = self.gradient_direction_history[index]
+
+        if self.expected_direction_history is not None:
+            gradient_direction_expected = self.expected_direction_history[index]
 
         # -- 3D plot -- #
         with plt.style.context("seaborn-whitegrid"):
@@ -151,12 +193,13 @@ class VisualNN(object):
                 self.ax.scatter(real_point[:, 0], real_point[:, 1], real_value, color='#D0252D')
             if self.fake_points_value_history is not None:
                 self.ax.scatter(fake_point[:, 0], fake_point[:, 1], fake_value, color='#1057AA')
+                cnt_point = len(fake_point)
+                all_zero = np.zeros((cnt_point, 1))
 
             # draw gradients
-            if self.gradient_direction_history is not None:
-                cnt_point = len(fake_point)
+            if self.gradient_direction_history is not None and self.fake_points_value_history is not None:
                 self.ax.quiver(fake_point[:, 0], fake_point[:, 1], fake_value.T, grad_visual[:, 0], grad_visual[:, 1],
-                               np.zeros((cnt_point, 1)), color='black', normalize=True, lw=1, length=0.1)
+                               all_zero, color='black', normalize=True, lw=1, length=0.1)
 
             # set lim
             plt.xlim(self.x_axis_min * 1.5, self.x_axis_max * 1.5)
@@ -174,12 +217,15 @@ class VisualNN(object):
                        cmap='coolwarm', origin='lower')
 
         # draw points
-        if self.real_points_value_history is not None:
-            plt.scatter(real_point[:, 0], real_point[:, 1], color='#D0252D', marker='+')
-        if self.fake_points_value_history is not None:
-            plt.scatter(fake_point[:, 0], fake_point[:, 1], color='#1057AA', marker='+')
+        if self.real_points_location_history is not None:
+            plt.scatter(real_point[:, 0], real_point[:, 1], cnt_point, color='#D0252D', marker='+')
+        if self.fake_points_location_history is not None:
+            plt.scatter(fake_point[:, 0], fake_point[:, 1], cnt_point, color='#1057AA', marker='+')
 
         # draw gradients
+        if self.expected_direction_history is not None:
+            plt.quiver(fake_point[:, 0], fake_point[:, 1], gradient_direction_expected[:, 0],
+                       gradient_direction_expected[:, 1], color='dimgray', units='width', alpha=0.6)
         if self.gradient_direction_history is not None:
             plt.quiver(fake_point[:, 0], fake_point[:, 1], grad_visual[:, 0], grad_visual[:, 1],
                        color='black', units='width')
@@ -193,6 +239,6 @@ class VisualNN(object):
     def save_data(self):
         if not os.path.exists('./history'):
             os.mkdir('./history')
-        name = time.strftime("%Y-%m-%d %H:%M", time.localtime()) + '.NN'
+        name = time.strftime("%Y-%m-%d %H-%M", time.localtime()) + '.NN'
         with open('./history/' + name, 'wb') as fw:
             pickle.dump(self, fw, -1)
