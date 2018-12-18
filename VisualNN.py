@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pylab as pl
+import copy
 import time
 import pickle
 import os
@@ -116,37 +117,37 @@ class VisualNN(object):
             if tuple_key == 'surface_value':
                 if self.surface_value_history is None:
                     self.surface_value_history = []
-                self.surface_value_history.append(tuple_plot.get(tuple_key))
+                self.surface_value_history.append(copy.deepcopy(tuple_plot.get(tuple_key)))
                 continue
             if tuple_key == 'real_points_location':
                 if self.real_points_location_history is None:
                     self.real_points_location_history = []
-                self.real_points_location_history.append(tuple_plot.get(tuple_key))
+                self.real_points_location_history.append(copy.deepcopy(tuple_plot.get(tuple_key)))
                 continue
             if tuple_key == 'real_points_value':
                 if self.real_points_value_history is None:
                     self.real_points_value_history = []
-                self.real_points_value_history.append(tuple_plot.get(tuple_key))
+                self.real_points_value_history.append(copy.deepcopy(tuple_plot.get(tuple_key)))
                 continue
             if tuple_key == 'fake_points_location':
                 if self.fake_points_location_history is None:
                     self.fake_points_location_history = []
-                self.fake_points_location_history.append(tuple_plot.get(tuple_key))
+                self.fake_points_location_history.append(copy.deepcopy(tuple_plot.get(tuple_key)))
                 continue
             if tuple_key == 'fake_points_value':
                 if self.fake_points_value_history is None:
                     self.fake_points_value_history = []
-                self.fake_points_value_history.append(tuple_plot.get(tuple_key))
+                self.fake_points_value_history.append(copy.deepcopy(tuple_plot.get(tuple_key)))
                 continue
             if tuple_key == 'gradient_direction':
                 if self.gradient_direction_history is None:
                     self.gradient_direction_history = []
-                self.gradient_direction_history.append(tuple_plot.get(tuple_key))
+                self.gradient_direction_history.append(copy.deepcopy(tuple_plot.get(tuple_key)))
                 continue
             if tuple_key == 'expected_direction':
                 if self.expected_direction_history is None:
                     self.expected_direction_history = []
-                self.expected_direction_history.append(tuple_plot.get(tuple_key))
+                self.expected_direction_history.append(copy.deepcopy(tuple_plot.get(tuple_key)))
             assert 'To know elements to plot, please refer to VisualNN.__doc__'
 
     def plot(self, index=-1):

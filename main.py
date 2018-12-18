@@ -128,6 +128,8 @@ for iter_g in range(iter_G):
                              'expected_direction': Grad_expected
                              }
             myVisualNN.add_elements(tuple_plot_NN)
+            'Support Elements: surface_value, real_distribution_location, real_points_location, real_points_value, fake_distribution_location, fake_points_location, fake_points_value, gradient_direction, expected_direction'
+
 
             tuple_plot_Loss = {'fake_points_loss': D_fake_mean_curr,
                                'real_points_loss': D_real_mean_curr,
